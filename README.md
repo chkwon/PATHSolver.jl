@@ -67,7 +67,7 @@ x ≥ 0
 when `F(x) = Mx + q`.
 
 ```julia
-using PATH
+using PATHSolver
 
 M = [0  0 -1 -1 ;
      0  0  1 -2 ;
@@ -87,7 +87,6 @@ z, f = solveMCP(myfunc, lb, ub)
 
 The result is:
 ```
-chkwon@MacBook:src$ julia test_pathjulia.jl
 Path 4.7.03: Standalone-C Link
 4 row/cols, 12 non-zeros, 75.00% dense.
 
