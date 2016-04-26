@@ -90,6 +90,13 @@ ub = 100*ones(n)
 z, f = solveMCP(myfunc, lb, ub)
 ```
 
+You can also supply a function for Jacobian:
+```julia
+myjac(x) = M
+z, f = solveMCP(myfunc, myjac, lb, ub)
+```
+When the Jacobian function is not supplied, it uses the automatic differentiation functinality of [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl).
+
 The result is:
 ```
 Path 4.7.03: Standalone-C Link
