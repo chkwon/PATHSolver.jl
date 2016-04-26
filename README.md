@@ -2,8 +2,6 @@
 
 This package provides a Julia wrapper of [the PATH Solver](http://pages.cs.wisc.edu/~ferris/path.html) for solving [Mixed Complementarity Problems (MCP)](https://en.wikipedia.org/wiki/Mixed_complementarity_problem). This package requires compiled libraries available in [ampl/pathlib](https://github.com/ampl/pathlib) and [PathJulia](https://github.com/chkwon/PathJulia).
 
-This package is under development.
-
 This package (well the PATH Solver) solves the MCP of the following form:
 ```
 lb ≤ x ≤ ub ⟂ F(x)
@@ -13,9 +11,16 @@ which means
 - `lb < x < ub`, then `F(x) = 0`
 - `x = ub`, then `F(x) ≤ 0`
 
+
+# OS X only
+
+This package currently supports Mac OS X only.
+
+I need help for Linux and Windows. The installation process basically downloads `libpath47.dylib` from [ampl/pathlib](https://github.com/ampl/pathlib) and `libpath47julia.dylb` from [PathJulia](https://github.com/chkwon/PathJulia), copies `libgfortran.3.dylib` from PathJulia, and places them in `~/.julia/v0.4/PATH/deps/usr/lib/`. Hopefully, the installation procedure can be simplified. I think for Windows and Linux, similar processes can be used.
+
+
 # Installation
 
-This package currently supports Mac OS X only. (I need help for Linux and Windows. The installation process basically downloads `libpath47.dylib` from [ampl/pathlib](https://github.com/ampl/pathlib) and `libpath47julia.dylb` from [PathJulia](https://github.com/chkwon/PathJulia), copies `libgfortran.3.dylib` from PathJulia, and places them in `~/.julia/v0.4/PATH/deps/usr/lib/`. Hopefully, the installation procedure can be simplified. I think for Windows and Linux, similar processes can be used.)
 
 To install PATHSolver.jl, follow the instructions given below:
 
