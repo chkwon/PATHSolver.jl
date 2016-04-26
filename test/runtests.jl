@@ -14,6 +14,10 @@ n = 4
 lb = zeros(n)
 ub = 100*ones(n)
 
+path_options(   "convergence_tolerance 1e-2",
+                "output yes",
+                "time_limit 3600"      )
+
 z, f = solveMCP(myfunc, lb, ub)
 
 @show z

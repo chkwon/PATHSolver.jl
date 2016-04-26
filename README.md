@@ -87,6 +87,10 @@ n = 4
 lb = zeros(n)
 ub = 100*ones(n)
 
+path_options(   "convergence_tolerance 1e-2",
+                "output yes",
+                "time_limit 3600"      )
+                
 z, f = solveMCP(myfunc, lb, ub)
 ```
 
@@ -95,7 +99,7 @@ You can also supply a function for Jacobian:
 myjac(x) = M
 z, f = solveMCP(myfunc, myjac, lb, ub)
 ```
-When the Jacobian function is not supplied, it uses the automatic differentiation functinality of [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl).
+When the Jacobian function is not supplied, it uses the automatic differentiation functionality of [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl).
 
 The result is:
 ```
