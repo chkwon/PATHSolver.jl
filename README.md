@@ -1,7 +1,7 @@
 # PATHSolver.jl
 
-<!-- [![Build Status](https://travis-ci.org/chkwon/PATHSolver.jl.svg?branch=master)](https://travis-ci.org/chkwon/PATHSolver.jl)
-[![Coverage Status](https://coveralls.io/repos/github/chkwon/PATHSolver.jl/badge.svg?branch=master)](https://coveralls.io/github/chkwon/PATHSolver.jl?branch=master) -->
+[![Build Status](https://travis-ci.org/chkwon/PATHSolver.jl.svg?branch=master)](https://travis-ci.org/chkwon/PATHSolver.jl)
+[![Coverage Status](https://coveralls.io/repos/github/chkwon/PATHSolver.jl/badge.svg?branch=master)](https://coveralls.io/github/chkwon/PATHSolver.jl?branch=master)
 
 
 
@@ -21,42 +21,19 @@ which means
 
 This package currently supports Mac OS X only.
 
-I need help for Linux and Windows. The installation process basically downloads `libpath47.dylib` from [ampl/pathlib](https://github.com/ampl/pathlib) and `libpath47julia.dylb` from [PathJulia](https://github.com/chkwon/PathJulia), copies `libgfortran.3.dylib` from PathJulia, and places them in `~/.julia/v0.4/PATH/deps/usr/lib/`. Hopefully, the installation procedure can be simplified. I think for Windows and Linux, similar processes can be used.
+I need help for Linux and Windows. The installation process basically downloads `libpath47.dylib` from [ampl/pathlib](https://github.com/ampl/pathlib) and `libpath47julia.dylb` from [PathJulia](https://github.com/chkwon/PathJulia), and places them in `~/.julia/v0.4/PATH/deps/usr/lib/`.
 
 
 # Installation
 
-
-To install PATHSolver.jl, follow the instructions given below:
-
-**Step 1.** Edit your `.bash_profile` file. For example, if you have `Atom` editor:
-```bash
-atom ~/.bash_profile
-```
-and add the following two lines:
-```bash
-export PATH_LICENSE_STRING="---------------------------------------------------------------"
-export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:"/Users/chkwon/.julia/v0.4/PATH/deps/usr/lib/"
-```
-You can obtain the most recent `PATH_LICENSE_STRING` from [the website of the PATH Solver](http://pages.cs.wisc.edu/~ferris/path/LICENSE). In the above, change `chkwon` to your user name. To reflect the change:
-```bash
-source ~/.bash_profile
-```
-
-**Step 2.** Run `julia` and install the package:
+To install,
 ```julia
-julia> Pkg.add("PATHSolver")
+Pkg.add("PATHSolver")
 ```
-It should run without any problem. If the installation process fails, check your `DYLD_LIBRARY_PATH` again, and then build the package again.
+and to test if it works,
 ```julia
-julia> Pkg.build("PATHSolver")
+Pkg.test("PATHSolver")
 ```
-
-**Step 3.** Test the installation:
-```julia
-julia> Pkg.test("PATHSolver")
-```
-
 
 To use algebraic modeling language for MCP, install and use the [Complementarity.jl](https://github.com/chkwon/Complementarity.jl) package.
 

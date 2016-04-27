@@ -9,11 +9,13 @@ libgfortran_path = filter(x -> endswith(x, "libgfortran.3.dylib"), Libdl.dllist(
 
 # The main dependency
 libpath47julia = library_dependency("libpath47julia")
-libpath47_dylib = joinpath(deps_dir, "pathlib-master", "lib", "osx", "libpath47.dylib")
-libpath47julia_dylib = joinpath(deps_dir, "PathJulia-0.0.2", "lib", "osx", "libpath47julia.dylib")
+# libpath47_dylib = joinpath(deps_dir, "pathlib-master", "lib", "osx", "libpath47.dylib")
+libpath47_dylib = joinpath(deps_dir, "pathlib-a11966f36875748820583e41455800470c971171", "lib", "osx", "libpath47.dylib")
+libpath47julia_dylib = joinpath(deps_dir, "PathJulia-0.0.3", "lib", "osx", "libpath47julia.dylib")
 
-pathlib_url = "https://github.com/ampl/pathlib/archive/master.zip"
-pathjulia_url = "https://github.com/chkwon/PathJulia/archive/0.0.2.tar.gz"
+# pathlib_url = "https://github.com/ampl/pathlib/archive/master.zip"
+pathlib_url = "https://github.com/ampl/pathlib/archive/a11966f36875748820583e41455800470c971171.zip"
+pathjulia_url = "https://github.com/chkwon/PathJulia/archive/0.0.3.tar.gz"
 
 provides(BuildProcess,
     (@build_steps begin
@@ -37,32 +39,7 @@ provides(BuildProcess,
 
 
 
-try
-    @BinDeps.install Dict(:libpath47julia => :libpath47julia)
-
-
-
-
-catch e
-    info("===================================================================")
-    info(" When the package installation fails, add the following directory  ")
-    info("    $lib_dir                       ")
-    info(" to 'DYLD_LIBRARY_PATH' in your '.bash_profile' by                 ")
-    info("    export DYLD_LIBRARY_PATH=\$DYLD_LIBRARY_PATH:\"$lib_dir\"")
-    info(" then close the terminal, reopen, and build the package again:     ")
-    info("    julia> Pkg.build(\"PATHSolver\")            ")
-    info(" Read https://github.com/chkwon/PATHSolver.jl for further information.")
-    info("===================================================================")
-    throw(e)
-end
-
-
-
-
-
-
-
-
+@BinDeps.install Dict(:libpath47julia => :libpath47julia)
 
 
 
