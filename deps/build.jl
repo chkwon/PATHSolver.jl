@@ -11,7 +11,6 @@ libgfortran_path = filter(x -> endswith(x, "libgfortran.3.dylib"), Libdl.dllist(
 libpath47julia = library_dependency("libpath47julia")
 libpath47_dylib = joinpath(deps_dir, "pathlib-master", "lib", "osx", "libpath47.dylib")
 libpath47julia_dylib = joinpath(deps_dir, "PathJulia-0.0.2", "lib", "osx", "libpath47julia.dylib")
-libgfortran_dylib = joinpath(deps_dir, "PathJulia-0.0.2", "lib", "osx", "libgfortran.3.dylib")
 
 pathlib_url = "https://github.com/ampl/pathlib/archive/master.zip"
 pathjulia_url = "https://github.com/chkwon/PathJulia/archive/0.0.2.tar.gz"
@@ -28,7 +27,6 @@ provides(BuildProcess,
             FileDownloader(pathjulia_url, joinpath(deps_dir, "downloads", "pathjulia.tar.gz"))
             FileUnpacker(joinpath(deps_dir, "downloads", "pathjulia.tar.gz"), deps_dir, libpath47julia_dylib)
             `cp $libpath47julia_dylib $lib_dir`
-            `cp $libgfortran_dylib $lib_dir`
             @osx_only `install_name_tool -change /usr/local/lib/libgfortran.3.dylib @rpath/libgfortran.3.dylib $lib_dir/libpath47.dylib`
             @osx_only `install_name_tool -change /usr/local/lib/libgcc_s.1.dylib @rpath/libgcc_s.1.dylib $lib_dir/libpath47.dylib`
             @osx_only `install_name_tool -add_rpath $(dirname(libgfortran_path)) $lib_dir/libpath47.dylib`
