@@ -4,19 +4,19 @@ os:
   # - linux
   - osx
 julia:
-  - release
+    - 0.4
+  # - release
   # - nightly
 notifications:
   email: false
+sudo: false
 addons:
   apt_packages:
       - gfortran
-      
 # uncomment the following lines to override the default test script
 #script:
  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
  - julia -e 'Pkg.clone(pwd()); Pkg.build("PATHSolver"); Pkg.test("PATHSolver"; coverage=true)'
-
 # script:
 #     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 #     - julia -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.add("ForwardDiff"); Pkg.build("PATHSolver");  Pkg.test("PATHSolver", coverage=true)'
