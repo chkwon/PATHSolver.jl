@@ -20,18 +20,19 @@ libpath47_dylib = joinpath(deps_dir, "pathlib-master", "lib", "osx", "libpath47.
 libpath47julia_dylib = joinpath(deps_dir, "PathJulia-0.0.2", "lib", "osx", "libpath47julia.dylib")
 libgfortran_dylib = joinpath(deps_dir, "PathJulia-0.0.2", "lib", "osx", "libgfortran.3.dylib")
 
+pathlib_url = "https://github.com/ampl/pathlib/archive/master.zip"
+pathjulia_url = "https://github.com/chkwon/PathJulia/archive/0.0.2.tar.gz"
+
 provides(BuildProcess,
     (@build_steps begin
         CreateDirectory(lib_dir, true)
         @build_steps begin
-            FileDownloader("https://github.com/ampl/pathlib/archive/master.zip",
-                            joinpath(deps_dir, "downloads", "pathlib.zip"))
+            FileDownloader(pathlib_url, joinpath(deps_dir, "downloads", "pathlib.zip"))
             FileUnpacker(joinpath(deps_dir, "downloads", "pathlib.zip"), deps_dir, libpath47_dylib)
             `cp $libpath47_dylib $lib_dir`
         end
         @build_steps begin
-            FileDownloader("https://github.com/chkwon/PathJulia/archive/0.0.2.tar.gz",
-                            joinpath(deps_dir, "downloads", "pathjulia.tar.gz"))
+            FileDownloader(pathjulia_url, joinpath(deps_dir, "downloads", "pathjulia.tar.gz"))
             FileUnpacker(joinpath(deps_dir, "downloads", "pathjulia.tar.gz"), deps_dir, libpath47julia_dylib)
             `cp $libpath47julia_dylib $lib_dir`
             `cp $libgfortran_dylib $lib_dir`
