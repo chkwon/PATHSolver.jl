@@ -15,7 +15,7 @@ addons:
         - gfortran
 script:
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-    - julia -p 2 -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.build("PATHSolver");  Pkg.test("PATHSolver", coverage=true)'
+    - julia -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.build("PATHSolver");  Pkg.test("PATHSolver", coverage=true)'
 after_success:
     - echo $TRAVIS_JULIA_VERSION
     - julia -e 'cd(Pkg.dir("PATHSolver")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
