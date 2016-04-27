@@ -1,5 +1,10 @@
 # PATHSolver.jl
 
+[![Build Status](https://travis-ci.org/chkwon/PATHSolver.jl.svg?branch=master)](https://travis-ci.org/chkwon/PATHSolver.jl)
+[![Coverage Status](https://coveralls.io/repos/github/chkwon/PATHSolver.jl/badge.svg?branch=master)](https://coveralls.io/github/chkwon/PATHSolver.jl?branch=master)
+
+
+
 This package provides a Julia wrapper of [the PATH Solver](http://pages.cs.wisc.edu/~ferris/path.html) for solving [Mixed Complementarity Problems (MCP)](https://en.wikipedia.org/wiki/Mixed_complementarity_problem). This package requires compiled libraries available in [ampl/pathlib](https://github.com/ampl/pathlib) and [PathJulia](https://github.com/chkwon/PathJulia).
 
 This package (well the PATH Solver) solves the MCP of the following form:
@@ -90,7 +95,7 @@ ub = 100*ones(n)
 path_options(   "convergence_tolerance 1e-2",
                 "output yes",
                 "time_limit 3600"      )
-                
+
 z, f = solveMCP(myfunc, lb, ub)
 ```
 
