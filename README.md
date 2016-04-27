@@ -58,6 +58,9 @@ julia> Pkg.test("PATHSolver")
 ```
 
 
+To use algebraic modeling language for MCP, install and use the [Complementarity.jl](https://github.com/chkwon/Complementarity.jl) package.
+
+
 # Example
 
 This example solves a Linear Complementarity Problem (LCP) in the form of:
