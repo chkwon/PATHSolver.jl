@@ -1,7 +1,7 @@
 # PATHSolver.jl
 
-[![Build Status](https://travis-ci.org/chkwon/PATHSolver.jl.svg?branch=master)](https://travis-ci.org/chkwon/PATHSolver.jl)
-[![Coverage Status](https://coveralls.io/repos/github/chkwon/PATHSolver.jl/badge.svg?branch=master)](https://coveralls.io/github/chkwon/PATHSolver.jl?branch=master)
+<!-- [![Build Status](https://travis-ci.org/chkwon/PATHSolver.jl.svg?branch=master)](https://travis-ci.org/chkwon/PATHSolver.jl)
+[![Coverage Status](https://coveralls.io/repos/github/chkwon/PATHSolver.jl/badge.svg?branch=master)](https://coveralls.io/github/chkwon/PATHSolver.jl?branch=master) -->
 
 
 
@@ -45,8 +45,7 @@ source ~/.bash_profile
 
 **Step 2.** Run `julia` and install the package:
 ```julia
-julia> Pkg.clone("https://github.com/chkwon/PATHSolver.jl.git")
-julia> Pkg.build("PATHSolver")
+julia> Pkg.add("PATHSolver")
 ```
 It should run without any problem. If the installation process fails, check your `DYLD_LIBRARY_PATH` again, and then build the package again.
 ```julia
