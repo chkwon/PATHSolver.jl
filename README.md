@@ -35,6 +35,13 @@ and to test if it works,
 Pkg.test("PATHSolver")
 ```
 
+You may need to install 'Xcode Command Line Tools'. On Mavericks or higher (Yosemite, El Capitan), you can install it by entering the following command in your terminal:
+```
+xcode-select --install
+```
+For older versions of Mac OS X, see [this post](http://mac-how-to.wonderhowto.com/how-to/install-command-line-developer-tools-without-xcode-0168115/).
+
+
 To use algebraic modeling language for MCP, install and use the [Complementarity.jl](https://github.com/chkwon/Complementarity.jl) package.
 
 
