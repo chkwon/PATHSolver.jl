@@ -20,7 +20,7 @@ libgfortran_path = isempty(gfortran_osx) ? "" : gfortran_osx[1]
 
 # Verions of libraries
 pathlib_v = "a11966f36875748820583e41455800470c971171"
-pathjulia_v = "master"
+pathjulia_v = "0.0.5"
 
 # The main dependency
 libpath47julia = library_dependency("libpath47julia")
