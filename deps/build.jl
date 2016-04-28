@@ -84,12 +84,12 @@ provides(BuildProcess,
         end
         @build_steps begin
             ChangeDirectory(joinpath(src_dir, "pathlib", "lib"))
-            `cp -i linux$bit/libpath47.so $lib_dir`
+            `cp -f linux$bit/libpath47.so $lib_dir`
         end
         @build_steps begin
             ChangeDirectory(joinpath(src_dir, "PathJulia", "src"))
             `make linux$bit`
-            `cp -i ../lib/linux$bit/libpath47julia.so $lib_dir`
+            `cp -f ../lib/linux$bit/libpath47julia.so $lib_dir`
         end
     end), libpath47julia, os = :Linux)
 
