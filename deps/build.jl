@@ -93,5 +93,12 @@ provides(BuildProcess,
         end
     end), libpath47julia, os = :Linux)
 
-
-@BinDeps.install Dict(:libpath47julia => :libpath47julia)
+try
+  @BinDeps.install Dict(:libpath47julia => :libpath47julia)
+catch e
+  message = "In Linux systems, try to run Pkg.build(\"PATHSolver\") one more time, and test it by Pkg.test(\"PATHSolver\")"
+  warn("========================================================================================================")
+  info(message)
+  warn("========================================================================================================")  
+  throw(e)
+end
