@@ -13,23 +13,21 @@ elseif Int ==Int64
   bit = "64"
 end
 
-libgfortran_path = filter(x -> endswith(x, "libgfortran.3.dylib"), Libdl.dllist())[1]
+# libgfortran_path = filter(x -> endswith(x, "libgfortran.3.dylib"), Libdl.dllist())[1]
 
 
-
+# Verions of libraries
+pathlib_v = "a11966f36875748820583e41455800470c971171"
+pathjulia_v = "0.0.4"
 
 # The main dependency
 libpath47julia = library_dependency("libpath47julia")
-# libpath47_dylib = joinpath(deps_dir, "pathlib-master", "lib", "osx", "libpath47.dylib")
-libpath47_dylib = joinpath(deps_dir, "pathlib-a11966f36875748820583e41455800470c971171", "lib", "osx", "libpath47.dylib")
-libpath47julia_dylib = joinpath(deps_dir, "PathJulia-0.0.3", "lib", "osx", "libpath47julia.dylib")
+libpath47_dylib = joinpath(deps_dir, "pathlib-$pathlib_v", "lib", "osx", "libpath47.dylib")
+libpath47julia_dylib = joinpath(deps_dir, "PathJulia-$pathjulia_v", "lib", "osx", "libpath47julia.dylib")
 
-# pathlib_url = "https://github.com/ampl/pathlib/archive/master.zip"
-pathlib_v = "a11966f36875748820583e41455800470c971171"
-pathjulia_v = "v0.0.4"
 
-libpath47_so64 = joinpath(src_dir, "pathlib-master", "lib", "linux$bit", "libpath47.so")
-libpath47julia_so64 = joinpath(src_dir, "PathJulia-master", "lib", "linux$bit", "libpath47julia.so")
+libpath47_so64 = joinpath(src_dir, "pathlib-$pathlib_v", "lib", "linux$bit", "libpath47.so")
+path47julia_c = joinpath(src_dir, "PathJulia-$pathjulia_v", "src", "pathjulia.c")
 
 
 provides(BuildProcess,
@@ -66,7 +64,7 @@ provides(BuildProcess,
         @build_steps begin
             FileDownloader("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.zip",
                             joinpath(dl_dir, "PathJulia.zip"))
-            FileUnpacker(joinpath(dl_dir, "PathJulia.zip"), src_dir, libpath47julia_so64)
+            FileUnpacker(joinpath(dl_dir, "PathJulia.zip"), src_dir, path47julia_c)
             # `cp -i $libpath47julia_so64 $lib_dir`
         end
         @build_steps begin
