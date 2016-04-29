@@ -42,9 +42,21 @@ function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector)
                  Ptr{Void},Ptr{Void}),
                  n, nnz, z, f, lb, ub, f_user_cb, j_user_cb)
 
+    status =
+        [ :Solved,              # 1 - solved
+          :StationaryPoint,     # 2 - stationary point found
+          :MajorIterLimit,      # 3 - major iteration limit
+          :MinorIterLimit,      # 4 - cumulative minor iteration limit
+          :TimeLimit,           # 5 - time limit
+          :Interrupt,           # 6 - user interrupt
+          :BoundError,          # 7 - bound error (lb is not less than ub)
+          :DominaError,         # 8 - domain error (could not find a starting point)
+          :InternalError        # 9 - internal error
+         ]
 
     remove_option_file()
-    return z, f
+
+    return status[t], z, f
 end
 
 

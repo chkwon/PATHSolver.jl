@@ -18,13 +18,13 @@ path_options(   "convergence_tolerance 1e-2",
                 "output yes",
                 "time_limit 3600"      )
 
-z, f = solveMCP(myfunc, lb, ub)
+status, z, f = solveMCP(myfunc, lb, ub)
 
+@show status
 @show z
 @show f
 
 
-
-
 # write your own tests here
 @test z == [2.8, 0.0, 0.8, 1.2]
+@test status == :Solved
