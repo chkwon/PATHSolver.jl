@@ -24,6 +24,24 @@ This package currently supports Mac OS X only.
 I need help for Linux and Windows. The installation process basically downloads `libpath47.dylib` from [ampl/pathlib](https://github.com/ampl/pathlib) and `libpath47julia.dylb` from [PathJulia](https://github.com/chkwon/PathJulia), and places them in `~/.julia/v0.4/PATH/deps/usr/lib/`.
 
 
+# License
+
+The PATH Solver requires a license. The web page of the PATH Solver provides a temporary license that is valid for a year. A new license is provided each year in the web page. Visit the [license page](http://pages.cs.wisc.edu/~ferris/path/LICENSE) of the PATH Solver.
+
+Edit your `.bash_profile` file. For example, if you have `Atom` editor:
+```bash
+atom ~/.bash_profile
+```
+and add the following two lines:
+```bash
+export PATH_LICENSE_STRING="---------------------------------------------------------------"
+```
+You can obtain the most recent `PATH_LICENSE_STRING` from [the website of the PATH Solver](http://pages.cs.wisc.edu/~ferris/path/LICENSE). To reflect the change:
+```bash
+source ~/.bash_profile
+```
+
+
 # Installation
 
 To install,
