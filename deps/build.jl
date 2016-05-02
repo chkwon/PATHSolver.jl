@@ -71,22 +71,10 @@ provides(BuildProcess,
             `mv PathJulia-$pathjulia_v PathJulia`
         end
         @build_steps begin
-            ChangeDirectory(joinpath(src_dir, "pathlib", "lib"))
-            `cp -f linux$bit/libpath47.so $lib_dir`
-        end
-        @build_steps begin
             ChangeDirectory(joinpath(src_dir, "PathJulia", "src"))
             `make linux$bit`
             `cp -f ../lib/linux$bit/libpath47julia.so $lib_dir`
         end
     end), libpath47julia, os = :Linux)
 
-try
-  @BinDeps.install Dict(:libpath47julia => :libpath47julia)
-catch e
-  message = "In Linux systems, try to run Pkg.build(\"PATHSolver\") one more time, and test it by Pkg.test(\"PATHSolver\")"
-  warn("========================================================================================================")
-  info(message)
-  warn("========================================================================================================")
-  throw(e)
-end
+@BinDeps.install Dict(:libpath47julia => :libpath47julia)
