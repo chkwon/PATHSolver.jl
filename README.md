@@ -24,7 +24,7 @@ This package currently supports Mac OS X and Linux. (If you experience erros in 
 
 # License
 
-The PATH Solver requires a license. The web page of the PATH Solver provides a temporary license that is valid for a year. A new license is provided each year in the web page. Visit the [license page](http://pages.cs.wisc.edu/~ferris/path/LICENSE) of the PATH Solver.
+Without a license, the PATH Solver can solve problem instances up to with up to 300 variables and 2000 non-zeros. For larger problems, the web page of the PATH Solver provides a temporary license that is valid for a year. A new license is provided each year in the web page. Visit the [license page](http://pages.cs.wisc.edu/~ferris/path/LICENSE) of the PATH Solver.
 
 Edit your `.bash_profile` file. For example, if you have `Atom` editor:
 ```bash
