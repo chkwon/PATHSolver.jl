@@ -17,7 +17,7 @@ which means
 - `x = ub`, then `F(x) ≤ 0`
 
 
-# Supprting OS X and Linux
+# Supporting OS X and Linux
 
 This package currently supports Mac OS X and Linux. (If you experience erros in installing and building the package, please create issues and report.) 
 
