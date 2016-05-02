@@ -19,9 +19,7 @@ which means
 
 # OS X only
 
-This package currently supports Mac OS X only.
-
-I need help for Linux and Windows. The installation process basically downloads `libpath47.dylib` from [ampl/pathlib](https://github.com/ampl/pathlib) and `libpath47julia.dylb` from [PathJulia](https://github.com/chkwon/PathJulia), and places them in `~/.julia/v0.4/PATH/deps/usr/lib/`.
+This package currently supports Mac OS X and Linux. (If you experience erros in installing and building the package, please create issues and report.)
 
 
 # License
@@ -52,13 +50,6 @@ and to test if it works,
 ```julia
 Pkg.test("PATHSolver")
 ```
-
-You may need to install 'Xcode Command Line Tools'. On Mavericks or higher (Yosemite, El Capitan), you can install it by entering the following command in your terminal:
-```
-xcode-select --install
-```
-For older versions of Mac OS X, see [this post](http://mac-how-to.wonderhowto.com/how-to/install-command-line-developer-tools-without-xcode-0168115/).
-
 
 To use algebraic modeling language for MCP, install and use the [Complementarity.jl](https://github.com/chkwon/Complementarity.jl) package.
 
