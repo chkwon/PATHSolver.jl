@@ -93,13 +93,13 @@ provides(BuildProcess,
             FileDownloader("https://github.com/ampl/pathlib/archive/$pathlib_v.zip", joinpath(dl_dir, "pathlib.zip"))
             FileUnpacker(joinpath(dl_dir, "pathlib.zip"), src_dir, libpath47_dll)
             `powershell -NoProfile -Command "Copy-Item -Path $libpath47_dll -Destination $lib_dir -force"`
-			`powershell -NoProfile -Command "Copy-Item -Path $libpath47_lib -Destination $lib_dir -force"`
+            `powershell -NoProfile -Command "Copy-Item -Path $libpath47_lib -Destination $lib_dir -force"`
         end
         @build_steps begin
             FileDownloader("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.zip", joinpath(dl_dir, "PathJulia.zip"))
             FileUnpacker(joinpath(dl_dir, "PathJulia.zip"), src_dir, libpath47julia_dll)
             `powershell -NoProfile -Command "Copy-Item -Path $libpath47julia_dll -Destination $lib_dir -force"`
-			`powershell -NoProfile -Command "Copy-Item -Path $libpath47julia_lib -Destination $lib_dir -force"`
+            # `powershell -NoProfile -Command "Copy-Item -Path $libpath47julia_lib -Destination $lib_dir -force"`
         end	
         # @build_steps begin
             # ChangeDirectory(src_dir)
