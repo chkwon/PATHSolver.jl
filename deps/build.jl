@@ -20,8 +20,7 @@ libgfortran_path = isempty(gfortran_osx) ? "" : gfortran_osx[1]
 
 # Verions of libraries
 pathlib_v = "a11966f36875748820583e41455800470c971171"
-#pathjulia_v = "0.0.6"
-pathjulia_v = "windows"
+pathjulia_v = "0.0.7"
 
 # The main dependency
 libpath47julia = library_dependency("libpath47julia")
@@ -100,7 +99,7 @@ provides(BuildProcess,
             FileUnpacker(joinpath(dl_dir, "PathJulia.zip"), src_dir, libpath47julia_dll)
             `powershell -NoProfile -Command "Copy-Item -Path $libpath47julia_dll -Destination $lib_dir -force"`
             # `powershell -NoProfile -Command "Copy-Item -Path $libpath47julia_lib -Destination $lib_dir -force"`
-        end	
+        end
         # @build_steps begin
             # ChangeDirectory(src_dir)
             # `powershell -Command "Remove-Item pathlib"`
@@ -109,9 +108,9 @@ provides(BuildProcess,
             # `powershell -Command "mv PathJulia-$pathjulia_v PathJulia"`
         # end
     end), libpath47julia, os = :Windows)
-	
+
 @windows_only push!(BinDeps.defaults, BuildProcess)
-	
+
 @BinDeps.install Dict(:libpath47julia => :libpath47julia)
 
 @windows_only pop!(BinDeps.defaults)
