@@ -2,3 +2,5 @@ downloads
 src
 usr
 deps.jl
+PathJulia*
+pathlib*
