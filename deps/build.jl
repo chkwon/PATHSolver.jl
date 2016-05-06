@@ -19,7 +19,8 @@ libgfortran_path = isempty(gfortran_osx) ? "" : gfortran_osx[1]
 
 
 # Verions of libraries
-pathlib_v = "a11966f36875748820583e41455800470c971171"
+# pathlib_v = "a11966f36875748820583e41455800470c971171"
+pathlib_v = "4.7.03"
 pathjulia_v = "0.0.7"
 
 # The main dependency
@@ -60,13 +61,13 @@ provides(BuildProcess,
         CreateDirectory(src_dir, true)
         @build_steps begin
             ChangeDirectory(src_dir)
-            FileDownloader("https://github.com/ampl/pathlib/archive/$pathlib_v.zip", joinpath(dl_dir, "pathlib.zip"))
-            FileUnpacker(joinpath(dl_dir, "pathlib.zip"), src_dir, libpath47_so)
+            FileDownloader("https://github.com/ampl/pathlib/archive/$pathlib_v.tar.gz", joinpath(dl_dir, "pathlib.tar.gz"))
+            FileUnpacker(joinpath(dl_dir, "pathlib.tar.gz"), src_dir, libpath47_so)
             # `cp -i $libpath47_so $lib_dir`
         end
         @build_steps begin
-            FileDownloader("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.zip", joinpath(dl_dir, "PathJulia.zip"))
-            FileUnpacker(joinpath(dl_dir, "PathJulia.zip"), src_dir, path47julia_c)
+            FileDownloader("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.tar.gz", joinpath(dl_dir, "PathJulia.tar.gz"))
+            FileUnpacker(joinpath(dl_dir, "PathJulia.tar.gz"), src_dir, path47julia_c)
             # `cp -i $libpath47julia_so $lib_dir`
         end
         @build_steps begin
