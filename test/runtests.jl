@@ -25,11 +25,11 @@ status, z, f = solveMCP(myfunc, lb, ub)
 @show f
 
 
-# write your own tests here
-@test z == [2.8, 0.0, 0.8, 1.2]
+@test isapprox(z, [2.8, 0.0, 0.8, 1.2])
 @test status == :Solved
 
 
+println("-------------------------------------------------------")
 
 
 M = [0  0 -1 -1 ;
@@ -55,7 +55,5 @@ status, z, f = solveMCP(myfunc, lb, ub)
 @show z
 @show f
 
-
-# write your own tests here
-@test z == [2.8, 0.0, 0.8, 1.2]
+@test isapprox(z, [2.8, 0.0, 0.8, 1.2])
 @test status == :Solved
