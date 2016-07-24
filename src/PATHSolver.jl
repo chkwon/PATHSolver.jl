@@ -15,7 +15,7 @@ export solveMCP, path_options
 
 
 function solveMCP(f_eval::Function, lb::Vector, ub::Vector)
-    j_eval = ForwardDiff.jacobian(f_eval)
+    j_eval = x -> ForwardDiff.jacobian(f_eval, x)
     return solveMCP(f_eval, j_eval, lb, ub)
 end
 
