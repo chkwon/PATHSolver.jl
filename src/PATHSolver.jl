@@ -83,7 +83,7 @@ end
             # int *row, double *data);
 
 function f_user_wrap(n::Cint, z::Ptr{Cdouble}, f::Ptr{Cdouble})
-    F = user_f(pointer_to_array(z, Int(n)))
+    F = user_f(unsafe_wrap(Array{Float64}, z, Int(n), false))
     unsafe_store_vector!(f, F)
     return Cint(0)
 end
@@ -91,7 +91,7 @@ end
 function j_user_wrap(n::Cint, nnz::Cint, z::Ptr{Cdouble},
     col_start::Ptr{Cint}, col_len::Ptr{Cint}, row::Ptr{Cint}, data::Ptr{Cdouble})
 
-    J = user_j(pointer_to_array(z, Int(n)) )
+    J = user_j(unsafe_wrap(Array{Float64}, z, Int(n), false))
 
     s_col, s_len, s_row, s_data = sparse_matrix(J)
 
