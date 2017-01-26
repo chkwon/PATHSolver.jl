@@ -14,12 +14,7 @@ n = 4
 lb = zeros(n)
 ub = 100*ones(n)
 
-path_options(   "convergence_tolerance 1e-2",
-                "output yes",
-                "time_limit 3600"      )
-
 status, z, f = solveMCP(myfunc, lb, ub)
-
 @show status
 @show z
 @show f
@@ -49,6 +44,7 @@ path_options(   "convergence_tolerance 1e-2",
                 "output no",
                 "time_limit 3600"      )
 
+
 status, z, f = solveMCP(myfunc, lb, ub)
 
 @show status
@@ -76,7 +72,14 @@ n = 4
 lb = zeros(n)
 ub = 100*ones(n)
 
-status, z, f = solveMCP(elemfunc, lb, ub)
+var_name = ["x1", "x2", "x3", "x4"]
+con_name = ["F1", "F2", "F3", "F4"]
+
+path_options(   "convergence_tolerance 1e-2",
+                "output yes",
+                "time_limit 3600"      )
+
+status, z, f = solveMCP(elemfunc, lb, ub, var_name, con_name)
 
 @show status
 @show z

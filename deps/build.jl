@@ -11,7 +11,8 @@ bit = (Int==Int32) ? "32" : "64"
 # Verions of libraries
 # pathlib_v = "a11966f36875748820583e41455800470c971171"
 pathlib_v = "4.7.03"
-pathjulia_v = "0.0.7"
+pathjulia_v = "0.1.0"
+# pathjulia_v = "0.0.7"
 
 # The main dependency
 libpath47julia = library_dependency("libpath47julia")
