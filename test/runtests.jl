@@ -1,4 +1,5 @@
 using PATHSolver
+using ForwardDiff
 using Base.Test
 
 M = [0  0 -1 -1 ;
@@ -79,7 +80,15 @@ path_options(   "convergence_tolerance 1e-2",
                 "output yes",
                 "time_limit 3600"      )
 
+jacfunc(x) = M
+
+status, z, f = solveMCP(elemfunc, lb, ub)
+status, z, f = solveMCP(elemfunc, lb, ub, var_name)
 status, z, f = solveMCP(elemfunc, lb, ub, var_name, con_name)
+status, z, f = solveMCP(elemfunc, jacfunc, lb, ub)
+status, z, f = solveMCP(elemfunc, jacfunc, lb, ub, var_name)
+status, z, f = solveMCP(elemfunc, jacfunc, lb, ub, var_name, con_name)
+
 
 @show status
 @show z
