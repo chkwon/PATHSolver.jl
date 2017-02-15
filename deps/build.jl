@@ -10,8 +10,7 @@ bit = (Int==Int32) ? "32" : "64"
 
 # Verions of libraries
 pathlib_v = "4.7.03"
-pathjulia_v = "0.1.0"
-pathjulia_v = "0a8b0a27a0f7e15b794d7694438a2551ac83e456"
+pathjulia_v = "0.1.1"
 
 # The main dependency
 libpath47julia = library_dependency("libpath47julia")
@@ -29,7 +28,6 @@ libpath47julia_dll = joinpath(src_dir, "PathJulia-$pathjulia_v", "lib", "win$bit
 # Mac OS X
 provides(Binaries, URI("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.zip"),
          libpath47julia, unpacked_dir="PathJulia-$pathjulia_v/lib/osx", os = :Darwin)
-
 
 # Linux 32/64
 provides(BuildProcess,
