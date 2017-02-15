@@ -9,10 +9,9 @@ src_dir = joinpath(deps_dir, "src")
 bit = (Int==Int32) ? "32" : "64"
 
 # Verions of libraries
-# pathlib_v = "a11966f36875748820583e41455800470c971171"
 pathlib_v = "4.7.03"
 pathjulia_v = "0.1.0"
-# pathjulia_v = "0.0.7"
+pathjulia_v = "0a8b0a27a0f7e15b794d7694438a2551ac83e456"
 
 # The main dependency
 libpath47julia = library_dependency("libpath47julia")
@@ -35,8 +34,8 @@ provides(Binaries, URI("https://github.com/chkwon/PathJulia/archive/$pathjulia_v
 # Linux 32/64
 provides(BuildProcess,
     (@build_steps begin
-        RemoveDirectory(lib_dir)
-        RemoveDirectory(src_dir)
+        `rm -rf $lib_dir`
+        `rm -rf $src_dir`
         CreateDirectory(lib_dir, true)
         CreateDirectory(src_dir, true)
         @build_steps begin
@@ -66,8 +65,8 @@ provides(BuildProcess,
 # Windows 32/64
 provides(BuildProcess,
     (@build_steps begin
-        RemoveDirectory(lib_dir)
-        RemoveDirectory(src_dir)      
+        `powershell -NoProfile -Command "Remove-Item $lib_dir -Force -Recurse"`
+        `powershell -NoProfile -Command "Remove-Item $src_dir -Force -Recurse"`
         CreateDirectory(lib_dir, true)
         CreateDirectory(src_dir, true)
         @build_steps begin
