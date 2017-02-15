@@ -35,6 +35,8 @@ provides(Binaries, URI("https://github.com/chkwon/PathJulia/archive/$pathjulia_v
 # Linux 32/64
 provides(BuildProcess,
     (@build_steps begin
+        RemoveDirectory(lib_dir)
+        RemoveDirectory(src_dir)
         CreateDirectory(lib_dir, true)
         CreateDirectory(src_dir, true)
         @build_steps begin
@@ -64,6 +66,8 @@ provides(BuildProcess,
 # Windows 32/64
 provides(BuildProcess,
     (@build_steps begin
+        RemoveDirectory(lib_dir)
+        RemoveDirectory(src_dir)      
         CreateDirectory(lib_dir, true)
         CreateDirectory(src_dir, true)
         @build_steps begin
