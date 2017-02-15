@@ -5,8 +5,6 @@ dl_dir = joinpath(dirname(dirname(@__FILE__)), "deps", "downloads")
 deps_dir = joinpath(dirname(dirname(@__FILE__)), "deps")
 lib_dir = joinpath(deps_dir, "usr", "lib")
 src_dir = joinpath(deps_dir, "src")
-old_dir = joinpath(deps_dir, "PathJulia-v0.1")
-
 
 
 # Cleanup
@@ -14,7 +12,6 @@ run(@build_steps begin
   BinDeps.RemoveDirectory(lib_dir)
   BinDeps.RemoveDirectory(src_dir)
   BinDeps.RemoveDirectory(dl_dir)
-  BinDeps.RemoveDirectory(old_dir)
 end)
 
 
