@@ -55,8 +55,17 @@ provides(Sources, URI("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.
 
 
 # Mac OS X
-provides(Binaries, URI("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.zip"),
-         libpath47julia, unpacked_dir="PathJulia-$pathjulia_v/lib/osx", os = :Darwin)
+provides(BuildProcess,
+    (@build_steps begin
+        GetSources(libpath47julia)
+        CreateDirectory(lib_dir, true)
+        @build_steps begin
+            ChangeDirectory(joinpath(src_dir, "PathJulia-$pathjulia_v", "src"))
+            `cp -f ../lib/osx/libpath47julia.dylib $lib_dir`
+        end
+    end), libpath47julia, os = :Darwin)
+# provides(Binaries, URI("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.zip"),
+#          libpath47julia, unpacked_dir="PathJulia-$pathjulia_v/lib/osx", os = :Darwin)
 
 
 # Linux 32/64
