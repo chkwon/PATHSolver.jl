@@ -7,13 +7,23 @@ lib_dir = joinpath(deps_dir, "usr", "lib")
 src_dir = joinpath(deps_dir, "src")
 
 
+function win_del_dir(dir)
+  if isdir(dir)
+    run(`powershell -NoProfile -Command "Remove-Item $dir -Force -Recurse"`)
+  end
+end
 # Cleanup
-run(@build_steps begin
-  BinDeps.RemoveDirectory(lib_dir)
-  BinDeps.RemoveDirectory(src_dir)
-  BinDeps.RemoveDirectory(dl_dir)
-end)
-
+if is_windows()
+  win_del_dir(dl_dir)
+  win_del_dir(lib_dir)
+  win_del_dir(src_dir)
+else
+  run(@build_steps begin
+    BinDeps.RemoveDirectory(lib_dir)
+    BinDeps.RemoveDirectory(src_dir)
+    BinDeps.RemoveDirectory(dl_dir)
+  end)
+end
 
 
 
@@ -68,8 +78,6 @@ provides(BuildProcess,
 # Windows 32/64
 provides(BuildProcess,
     (@build_steps begin
-        `powershell -NoProfile -Command "Remove-Item $lib_dir -Force -Recurse"`
-        `powershell -NoProfile -Command "Remove-Item $src_dir -Force -Recurse"`
         CreateDirectory(lib_dir, true)
         CreateDirectory(src_dir, true)
         @build_steps begin
