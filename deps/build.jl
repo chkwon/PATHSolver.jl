@@ -3,6 +3,7 @@ using BinDeps
 
 dl_dir = joinpath(dirname(dirname(@__FILE__)), "deps", "downloads")
 deps_dir = joinpath(dirname(dirname(@__FILE__)), "deps")
+usr_dir = joinpath(deps_dir, "usr")
 lib_dir = joinpath(deps_dir, "usr", "lib")
 src_dir = joinpath(deps_dir, "src")
 
@@ -15,11 +16,11 @@ end
 # Cleanup
 if is_windows()
   win_del_dir(dl_dir)
-  win_del_dir(lib_dir)
+  win_del_dir(usr_dir)
   win_del_dir(src_dir)
 else
   run(@build_steps begin
-    BinDeps.RemoveDirectory(lib_dir)
+    BinDeps.RemoveDirectory(usr_dir)
     BinDeps.RemoveDirectory(src_dir)
     BinDeps.RemoveDirectory(dl_dir)
   end)
@@ -48,8 +49,8 @@ libpath47_lib = joinpath(src_dir, "pathlib-$pathlib_v", "lib", "win$bit", "path4
 libpath47julia_dll = joinpath(src_dir, "PathJulia-$pathjulia_v", "lib", "win$bit", "libpath47julia.dll")
 
 
-# provides(Sources, URI("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.tar.gz"),
-#   libpath47julia, os = :Linux)
+provides(Sources, URI("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.tar.gz"),
+  libpath47julia, unpacked_dir="PathJulia-$pathjulia_v", os = :Linux)
 
 
 
@@ -61,12 +62,8 @@ provides(Binaries, URI("https://github.com/chkwon/PathJulia/archive/$pathjulia_v
 # Linux 32/64
 provides(BuildProcess,
     (@build_steps begin
+        GetSources(libpath47julia)
         CreateDirectory(lib_dir, true)
-        CreateDirectory(src_dir, true)
-        @build_steps begin
-            FileDownloader("https://github.com/chkwon/PathJulia/archive/$pathjulia_v.tar.gz", joinpath(dl_dir, "PathJulia.tar.gz"))
-            FileUnpacker(joinpath(dl_dir, "PathJulia.tar.gz"), src_dir, path47julia_c)
-        end
         @build_steps begin
             ChangeDirectory(joinpath(src_dir, "PathJulia-$pathjulia_v", "src"))
             `make linux$bit`
