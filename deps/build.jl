@@ -7,24 +7,10 @@ usr_dir = joinpath(deps_dir, "usr")
 lib_dir = joinpath(deps_dir, "usr", "lib")
 src_dir = joinpath(deps_dir, "src")
 
-
-function win_del_dir(dir)
-  if isdir(dir)
-    run(`powershell -NoProfile -Command "Remove-Item $dir -Force -Recurse"`)
-  end
-end
 # Cleanup
-if is_windows()
-  win_del_dir(dl_dir)
-  win_del_dir(usr_dir)
-  win_del_dir(src_dir)
-else
-  run(@build_steps begin
-    BinDeps.RemoveDirectory(usr_dir)
-    BinDeps.RemoveDirectory(src_dir)
-    BinDeps.RemoveDirectory(dl_dir)
-  end)
-end
+isdir(dl_dir) && rm(dl_dir, recursive=true)
+isdir(usr_dir) && rm(usr_dir, recursive=true)
+isdir(src_dir) && rm(src_dir, recursive=true)
 
 
 
@@ -61,6 +47,7 @@ provides(BuildProcess,
         CreateDirectory(lib_dir, true)
         @build_steps begin
             ChangeDirectory(joinpath(src_dir, "PathJulia-$pathjulia_v", "src"))
+            # cp("../lib/osx/libpath47julia.dylib", lib_dir)
             `cp -f ../lib/osx/libpath47julia.dylib $lib_dir`
         end
     end), libpath47julia, os = :Darwin)
