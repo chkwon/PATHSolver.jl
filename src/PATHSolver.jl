@@ -15,37 +15,12 @@ export solveMCP, options
 
 
 
-
-function solveMCP(f_eval::Function, lb::Vector, ub::Vector)
-  var_name = C_NULL
-  con_name = C_NULL
-  return solveMCP(f_eval, lb, ub, var_name, con_name)
-end
-
-function solveMCP(f_eval::Function, lb::Vector, ub::Vector, var_name)
-  con_name = C_NULL
-  return solveMCP(f_eval, lb, ub, var_name, con_name)
-end
-
-function solveMCP(f_eval::Function, lb::Vector, ub::Vector, var_name, con_name)
+function solveMCP(f_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL)
   j_eval = x -> ForwardDiff.jacobian(f_eval, x)
   return solveMCP(f_eval, j_eval, lb, ub, var_name, con_name)
 end
 
-function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector)
-  var_name = C_NULL
-  con_name = C_NULL
-  return solveMCP(f_eval, j_eval, lb, ub, var_name, con_name)
-end
-
-function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, var_name)
-  con_name = C_NULL
-  return solveMCP(f_eval, j_eval, lb, ub, var_name, con_name)
-end
-
-
-
-function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, var_name, con_name)
+function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL)
   global user_f = f_eval
   global user_j = j_eval
 
