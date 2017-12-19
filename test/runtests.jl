@@ -2,6 +2,8 @@ using PATHSolver
 using ForwardDiff
 using Base.Test
 
+include("sparse_matrix.jl")
+
 M = [0  0 -1 -1 ;
      0  0  1 -2 ;
      1 -1  2 -2 ;
@@ -95,6 +97,16 @@ status, z, f = solveMCP(elemfunc, jacfunc, lb, ub, var_name, con_name)
 @test status == :Solved
 
 function test_in_local_scope()
+    # Verify that we can solve MCPs in local scope. Surprisingly, this is 
+    # is relevant because it affects the way closures are generated. To be 
+    # specific, you can do the following in global scope:
+    # 
+    # julia> y = [1]
+    # julia> cfunction(x -> x + y[1], Int, (Int,))
+    # 
+    # but running the same code inside a function will fail with:
+    #   ERROR: closures are not yet c-callable
+
     M = [0  0 -1 -1 ;
          0  0  1 -2 ;
          1 -1  2 -2 ;
