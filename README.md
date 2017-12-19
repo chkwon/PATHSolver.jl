@@ -100,6 +100,18 @@ z, f = solveMCP(myfunc, myjac, lb, ub)
 ```
 When the Jacobian function is not supplied, it uses the automatic differentiation functionality of [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl).
 
+
+When the problem is a **linear** complementarity problem (LCP), one can use `solveLCP`:
+```julia
+z, f = solveLCP(myfunc, lb, ub)
+```
+To supply the Jacobian matrix:
+```julia
+z, f = solveLCP(myfunc, M, lb, ub)
+```
+These `solveLCP` functions do not evaluate the derivatives during iterations.
+
+
 The result is:
 ```
 Path 4.7.03: Standalone-C Link
@@ -157,3 +169,25 @@ Residual of 4.44089e-16 is OK
 z = [2.8,0.0,0.8,1.2]
 f = [0.0,0.40000000000000013,4.440892098500626e-16,0.0]
 ```
+
+# Labels
+
+In the above output, the variable and function names are given as `x` and `f` automatically by the solver. If you want to give own names, you can do it as follows:
+```julia
+var_name = ["first var", "second var", "third var", "fourth var"]
+con_name = ["func 1", "func 2", "func 3", "func 4"]
+
+status, z, f = solveMCP(myfunc, lb, ub)
+status, z, f = solveMCP(myfunc, lb, ub, var_name)
+status, z, f = solveMCP(myfunc, lb, ub, var_name, con_name)
+status, z, f = solveMCP(myfunc, myjac, lb, ub)
+status, z, f = solveMCP(myfunc, myjac, lb, ub, var_name)
+status, z, f = solveMCP(myfunc, myjac, lb, ub, var_name, con_name)
+```
+
+# Solver Options
+Before solving the problem, you can set the solver options; for example:
+```julia
+options(convergence_tolerance=1e-2, output=:yes, time_limit=3600, lemke_start=:first, nms_searchtype=:line)
+```
+The full list of options is available at: http://pages.cs.wisc.edu/~ferris/path/options.pdf
