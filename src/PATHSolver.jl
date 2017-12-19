@@ -2,7 +2,6 @@ module PATHSolver
 
 using ForwardDiff
 using FunctionWrappers: FunctionWrapper
-using Compat: pairs
 
 if isfile(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
   include(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
