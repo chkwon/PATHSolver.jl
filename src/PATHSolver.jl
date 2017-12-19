@@ -1,6 +1,7 @@
 module PATHSolver
 
 using ForwardDiff
+using FunctionWrappers: FunctionWrapper
 
 if isfile(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
   include(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
@@ -13,7 +14,8 @@ end
 
 export solveMCP, options
 
-
+const user_f = Ref(FunctionWrapper{Vector{Cdouble}, Tuple{Vector{Cdouble}}}(identity))
+const user_j = Ref(FunctionWrapper{SparseMatrixCSC{Cdouble, Cint}, Tuple{Vector{Cdouble}}}(identity))
 
 function solveMCP(f_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL)
   j_eval = x -> ForwardDiff.jacobian(f_eval, x)
@@ -21,8 +23,10 @@ function solveMCP(f_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con
 end
 
 function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL)
-  f_user_cb = cfunction(f_user_wrap(f_eval), Cint, (Cint, Ptr{Cdouble}, Ptr{Cdouble}))
-  j_user_cb = cfunction(j_user_wrap(j_eval), Cint, (Cint, Cint, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}))
+  user_f[] = f_eval
+  user_j[] = j_eval
+  f_user_cb = cfunction(f_user_wrap, Cint, (Cint, Ptr{Cdouble}, Ptr{Cdouble}))
+  j_user_cb = cfunction(j_user_wrap, Cint, (Cint, Cint, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}))
 
   n = length(lb)
   z = copy(lb)
@@ -82,31 +86,26 @@ end
 # static int (*j_eval)(int n, int nnz, double *z, int *col_start, int *col_len,
       # int *row, double *data);
 
-function f_user_wrap(user_f::Function)
-  function callback(n::Cint, z::Ptr{Cdouble}, f::Ptr{Cdouble})
-    F = user_f(unsafe_wrap(Array{Float64}, z, Int(n), false))
-    unsafe_store_vector!(f, F)
-    return Cint(0)
-  end
-  return callback
+
+function f_user_wrap(n::Cint, z::Ptr{Cdouble}, f::Ptr{Cdouble})
+  F = user_f[](unsafe_wrap(Array{Cdouble}, z, Int(n), false))
+  unsafe_store_vector!(f, F)
+  return Cint(0)
 end
 
-function j_user_wrap(user_j::Function)
-  function callback(n::Cint, nnz::Cint, z::Ptr{Cdouble},
-    col_start::Ptr{Cint}, col_len::Ptr{Cint}, row::Ptr{Cint}, data::Ptr{Cdouble})
+function j_user_wrap(n::Cint, nnz::Cint, z::Ptr{Cdouble},
+  col_start::Ptr{Cint}, col_len::Ptr{Cint}, row::Ptr{Cint}, data::Ptr{Cdouble})
 
-    J = user_j(unsafe_wrap(Array{Float64}, z, Int(n), false))
+  J = user_j[](unsafe_wrap(Array{Cdouble}, z, Int(n), false))
 
-    s_col, s_len, s_row, s_data = sparse_matrix(J)
+  s_col, s_len, s_row, s_data = sparse_matrix(J)
 
-    unsafe_store_vector!(col_start, s_col)
-    unsafe_store_vector!(col_len, s_len)
-    unsafe_store_vector!(row, s_row)
-    unsafe_store_vector!(data, s_data)
+  unsafe_store_vector!(col_start, s_col)
+  unsafe_store_vector!(col_len, s_len)
+  unsafe_store_vector!(row, s_row)
+  unsafe_store_vector!(data, s_data)
 
-    return Cint(0)
-  end
-  return callback
+  return Cint(0)
 end
 ###############################################################################
 
