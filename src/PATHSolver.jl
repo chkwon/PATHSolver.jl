@@ -18,7 +18,7 @@ const user_f = Ref(FunctionWrapper{Vector{Cdouble}, Tuple{Vector{Cdouble}}}(iden
 const user_j = Ref(FunctionWrapper{SparseMatrixCSC{Cdouble, Cint}, Tuple{Vector{Cdouble}}}(identity))
 
 count_nonzeros(M::AbstractSparseMatrix) = nnz(M)
-count_nonzeros(M::AbstractMatrix) = count(x -> !iszero(x), M) # fallback for dense matrices
+count_nonzeros(M::AbstractMatrix) = count(x -> x != 0, M) # fallback for dense matrices
 
 function solveMCP(f_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL)
   j_eval = x -> ForwardDiff.jacobian(f_eval, x)
