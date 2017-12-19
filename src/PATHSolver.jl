@@ -9,13 +9,28 @@ else
   error("PATHSolver not properly installed. Please run Pkg.build(\"PATHSolver\")")
 end
 
-export solveMCP, options
+export solveMCP, solveLCP, options
 
 # Global function pointers for the user-supplied function and jacobian evaluators.
 const user_f = Ref(FunctionWrapper{Vector{Cdouble}, Tuple{Vector{Cdouble}}}(identity))
 # The annotated SparseMatrixCSC return type will automatically convert the 
 # jacobian into the correct sparse form for PATH
 const user_j = Ref(FunctionWrapper{SparseMatrixCSC{Cdouble, Cint}, Tuple{Vector{Cdouble}}}(identity))
+
+const cached_J = [convert(SparseMatrixCSC{Cdouble, Cint}, zeros(0, 0))]
+const cached_J_filled = Ref(false)
+
+const status = 
+   [  :Solved,                          # 1 - solved
+      :StationaryPointFound,            # 2 - stationary point found
+      :MajorIterationLimit,             # 3 - major iteration limit
+      :CumulativeMinorIterationLimit,   # 4 - cumulative minor iteration limit
+      :TimeLimit,                       # 5 - time limit
+      :UserInterrupt,                   # 6 - user interrupt
+      :BoundError,                      # 7 - bound error (lb is not less than ub)
+      :DomainError,                     # 8 - domain error (could not find a starting point)
+      :InternalError                    # 9 - internal error
+  ]
 
 count_nonzeros(M::AbstractSparseMatrix) = nnz(M)
 count_nonzeros(M::AbstractMatrix) = count(x -> !iszero(x), M) # fallback for dense matrices
@@ -46,24 +61,40 @@ function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, va
            Ptr{Void}, Ptr{Void}),
            n, nnz, z, f, lb, ub, var_name, con_name, f_user_cb, j_user_cb)
 
-  status =
-   [  :Solved,                          # 1 - solved
-      :StationaryPointFound,            # 2 - stationary point found
-      :MajorIterationLimit,             # 3 - major iteration limit
-      :CumulativeMinorIterationLimit,   # 4 - cumulative minor iteration limit
-      :TimeLimit,                       # 5 - time limit
-      :UserInterrupt,                   # 6 - user interrupt
-      :BoundError,                      # 7 - bound error (lb is not less than ub)
-      :DomainError,                     # 8 - domain error (could not find a starting point)
-      :InternalError                    # 9 - internal error
-  ]
-
   remove_option_file()
   return status[t], z, f
-
 end
 
+function solveLCP(f_eval::Function, lb::AbstractVector, ub::AbstractVector, 
+                  var_name=C_NULL, con_name=C_NULL)
+  J = ForwardDiff.jacobian(f_eval, lb)
+  solveLCP(f_eval, J, lb, ub, var_name, con_name)
+end
 
+function solveLCP(f_eval::Function, M::AbstractMatrix, 
+                  lb::AbstractVector, ub::AbstractVector,
+                  var_name=C_NULL, con_name=C_NULL)
+  user_f[] = f_eval
+  cached_J[] = M
+  cached_J_filled[] = false
+  f_user_cb = cfunction(f_user_wrap, Cint, (Cint, Ptr{Cdouble}, Ptr{Cdouble}))
+  j_user_cb = cfunction(cached_j_user_wrap, Cint, (Cint, Cint, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}))
+
+  n = length(lb)
+  z = copy(lb)
+  f = zeros(n)
+
+  nnz = count_nonzeros(M)
+  t = ccall( (:path_main, "libpath47julia"), Cint,
+          (Cint, Cint,
+           Ptr{Cdouble}, Ptr{Cdouble},
+           Ptr{Cdouble}, Ptr{Cdouble},
+           Ptr{Ptr{Cchar}}, Ptr{Ptr{Cchar}},
+           Ptr{Void}, Ptr{Void}),
+           n, nnz, z, f, lb, ub, var_name, con_name, f_user_cb, j_user_cb)
+  remove_option_file()
+  return status[t], z, f
+end
 
 function remove_option_file()
   if isfile("path.opt")
@@ -103,7 +134,23 @@ function j_user_wrap(n::Cint, expected_nnz::Cint, z_ptr::Ptr{Cdouble},
   if nnz(J) > expected_nnz
     error("Evaluated jacobian has more nonzero entries than were initially provided in solveMCP()")
   end
+  load_sparse_matrix(J, n, expected_nnz, col_start_ptr, col_len_ptr, row_ptr, data_ptr)
+  return Cint(0)
+end
 
+function cached_j_user_wrap(n::Cint, expected_nnz::Cint, z_ptr::Ptr{Cdouble},
+                     col_start_ptr::Ptr{Cint}, col_len_ptr::Ptr{Cint}, 
+                     row_ptr::Ptr{Cint}, data_ptr::Ptr{Cdouble})
+  if !(cached_J_filled[])
+    load_sparse_matrix(cached_J[], n, expected_nnz, col_start_ptr, col_len_ptr, row_ptr, data_ptr)
+    cached_J_filled[] = true
+  end
+  return Cint(0)
+end
+
+function load_sparse_matrix(J::SparseMatrixCSC, n::Cint, expected_nnz::Cint,
+                            col_start_ptr::Ptr{Cint}, col_len_ptr::Ptr{Cint}, 
+                            row_ptr::Ptr{Cint}, data_ptr::Ptr{Cdouble})
   # Transfer data from the computed jacobian into the sparse format that PATH
   # expects. Fortunately, PATH uses a compressed-sparse-column storage which
   # is compatible with Julia's default SparseMatrixCSC format.
@@ -129,7 +176,8 @@ function j_user_wrap(n::Cint, expected_nnz::Cint, z_ptr::Ptr{Cdouble},
     row[i] = rv[i]
     data[i] = nz[i]
   end
-  return Cint(0)
 end
+
+
 
 end # Module
