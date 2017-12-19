@@ -1,7 +1,3 @@
-using PATHSolver
-using Base.Test
-
-
 # Verify that pulling data directly out of the SparseMatrixCSC form gives
 # exactly what the previous hand-coded algorithm gave.
 @testset "sparse matrix" begin
@@ -57,4 +53,3 @@ using Base.Test
     @test sparse_matrix_csc(Mf) == sparse_matrix_csc(M)
   end
 end
-

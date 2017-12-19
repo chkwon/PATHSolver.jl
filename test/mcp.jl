@@ -67,8 +67,8 @@
     lb = zeros(n)
     ub = 100*ones(n)
 
-    var_name = ["x1", "x2", "x3", "x4"]
-    con_name = ["F1", "F2", "F3", "F4"]
+    var_name = ["first var", "second var", "third var", "fourth var"]
+    con_name = ["func 1", "func 2", "func 3", "func 4"]
 
     options(convergence_tolerance=1e-2, output=:yes, time_limit=3600)
 
@@ -92,13 +92,13 @@
     @test status == :Solved
 
     function test_in_local_scope()
-        # Verify that we can solve MCPs in local scope. Surprisingly, this is 
-        # is relevant because it affects the way closures are generated. To be 
+        # Verify that we can solve MCPs in local scope. Surprisingly, this is
+        # is relevant because it affects the way closures are generated. To be
         # specific, you can do the following in global scope:
-        # 
+        #
         # julia> y = [1]
         # julia> cfunction(x -> x + y[1], Int, (Int,))
-        # 
+        #
         # but running the same code inside a function will fail with:
         #   ERROR: closures are not yet c-callable
 
@@ -115,7 +115,7 @@
         lb = zeros(n)
         ub = 100*ones(n)
 
-        options(convergence_tolerance=1e-2, output=:no, time_limit=3600)
+        options(convergence_tolerance=1e-2, output=:yes, time_limit=3600, lemke_start=:first, nms_searchtype=:line)
 
         status, z, f = solveMCP(myfunc, lb, ub)
 
