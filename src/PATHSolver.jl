@@ -2,6 +2,7 @@ module PATHSolver
 
 using ForwardDiff
 using FunctionWrappers: FunctionWrapper
+using Compat: pairs
 
 if isfile(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
   include(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
@@ -69,11 +70,6 @@ function remove_option_file()
   if isfile("path.opt")
     rm("path.opt")
   end
-end
-
-# Needed for compatibility with Julia v0.5 through v0.7
-@static if VERSION < v"0.7.0-"
-  pairs(x) = [(p[1] => p[2]) for p in x]
 end
 
 function options(;kwargs...)
