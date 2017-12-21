@@ -120,9 +120,11 @@
 
     println("-------------------------------------------------------")
 
-    M2 = rand(size(M))
 
-    @test_warn "does not match" solveLCP(elemfunc, M2, lb, ub, lcp_check=true)
 
+    if  VERSION > v"0.6"
+        M2 = rand(size(M))
+        @test_warn "does not match" solveLCP(elemfunc, M2, lb, ub, lcp_check=true)
+    end
 
 end
