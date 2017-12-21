@@ -66,14 +66,29 @@ function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, va
 end
 
 function solveLCP(f_eval::Function, lb::AbstractVector, ub::AbstractVector,
-                  var_name=C_NULL, con_name=C_NULL)
+                  var_name=C_NULL, con_name=C_NULL; lcp_check=false)
   J = ForwardDiff.jacobian(f_eval, lb)
+  if lcp_check
+      Jr = ForwardDiff.jacobian(f_eval, rand(size(lb)))
+      if norm(J-Jr, 1) > 1e-8
+          error("The problem does not seem linear. Use `solveMCP()` instead.")
+      end
+  end
+
   solveLCP(f_eval, J, lb, ub, var_name, con_name)
 end
 
 function solveLCP(f_eval::Function, M::AbstractMatrix,
                   lb::AbstractVector, ub::AbstractVector,
-                  var_name=C_NULL, con_name=C_NULL)
+                  var_name=C_NULL, con_name=C_NULL; lcp_check=false)
+
+  if lcp_check
+      J = ForwardDiff.jacobian(f_eval, lb)
+      if norm(J-M, 1) > 1e-8
+          warn("The user supplied Jacobian does not match with the result by FowardDiff.jacobian(). It proceeds with the user supplied Jacobian.")
+      end
+  end
+
   user_f[] = f_eval
   cached_J[] = M
   cached_J_filled[] = false
