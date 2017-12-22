@@ -85,7 +85,8 @@ function solveLCP(f_eval::Function, M::AbstractMatrix,
   if lcp_check
       J = ForwardDiff.jacobian(f_eval, lb)
       if norm(J-M, 1) > 1e-8
-          warn("The user supplied Jacobian does not match with the result by FowardDiff.jacobian(). It proceeds with the user supplied Jacobian.")
+          # warn("The user supplied Jacobian does not match with the result by FowardDiff.jacobian(). It proceeds with the user supplied Jacobian.")
+          error("The user supplied Jacobian does not match with the result by FowardDiff.jacobian().")
       end
   end
 
