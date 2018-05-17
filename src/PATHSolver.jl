@@ -35,19 +35,34 @@ const status =
 count_nonzeros(M::AbstractSparseMatrix) = nnz(M)
 count_nonzeros(M::AbstractMatrix) = count(x -> x != 0, M) # fallback for dense matrices
 
-function solveMCP(f_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL)
-  j_eval = x -> ForwardDiff.jacobian(f_eval, x)
-  return solveMCP(f_eval, j_eval, lb, ub, var_name, con_name)
+function solveMCP(f_eval::Function, lb::Vector, ub::Vector, z::Vector, var_name=C_NULL, con_name=C_NULL)
+  return solveMCP(f_eval, lb, ub, var_name, con_name, z)
 end
 
-function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL)
+function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, z::Vector, var_name=C_NULL, con_name=C_NULL)
+  return solveMCP(f_eval, j_eval, lb, ub, var_name, con_name, z)
+end
+
+function solveMCP(f_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL, z::Vector=copy(lb))
+  j_eval = x -> ForwardDiff.jacobian(f_eval, x)
+  return solveMCP(f_eval, j_eval, lb, ub, var_name, con_name, z)
+end
+
+function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL, z::Vector=copy(lb))
   user_f[] = f_eval
   user_j[] = j_eval
   f_user_cb = cfunction(f_user_wrap, Cint, (Cint, Ptr{Cdouble}, Ptr{Cdouble}))
   j_user_cb = cfunction(j_user_wrap, Cint, (Cint, Cint, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}))
 
   n = length(lb)
-  z = copy(lb)
+  z = copy(z)
+  for i = 1:n
+      if lb[i] > z[i]
+        z[i] = lb[i]
+    elseif ub[i] < z[i]
+        z[i] = ub[i]
+    end
+  end
   f = zeros(n)
 
   J0 = j_eval(z)
@@ -65,8 +80,16 @@ function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, va
   return status[t], z, f
 end
 
+function solveLCP(f_eval::Function, lb::AbstractVector, ub::AbstractVector, z::AbstractVector=copy(lb), var_name=C_NULL, con_name=C_NULL; lcp_check=false,)
+  return solveLCP(f_eval, lb, ub, var_name, con_name, z)
+end
+
+function solveLCP(f_eval::Function, M::AbstractMatrix, lb::AbstractVector, ub::AbstractVector, z::AbstractVector=copy(lb), var_name=C_NULL, con_name=C_NULL; lcp_check=false)
+  return solveLCP(f_eval, M, lb, ub, var_name, con_name, z)
+end
+
 function solveLCP(f_eval::Function, lb::AbstractVector, ub::AbstractVector,
-                  var_name=C_NULL, con_name=C_NULL; lcp_check=false)
+                  var_name=C_NULL, con_name=C_NULL, z::AbstractVector = copy(lb); lcp_check=false)
   J = ForwardDiff.jacobian(f_eval, lb)
   if lcp_check
       Jr = ForwardDiff.jacobian(f_eval, rand(size(lb)))
@@ -75,12 +98,12 @@ function solveLCP(f_eval::Function, lb::AbstractVector, ub::AbstractVector,
       end
   end
 
-  solveLCP(f_eval, J, lb, ub, var_name, con_name)
+  solveLCP(f_eval, J, lb, ub, var_name, con_name, z)
 end
 
 function solveLCP(f_eval::Function, M::AbstractMatrix,
                   lb::AbstractVector, ub::AbstractVector,
-                  var_name=C_NULL, con_name=C_NULL; lcp_check=false)
+                  var_name=C_NULL, con_name=C_NULL, z::AbstractVector = copy(lb); lcp_check=false)
 
   if lcp_check
       J = ForwardDiff.jacobian(f_eval, lb)
@@ -97,7 +120,14 @@ function solveLCP(f_eval::Function, M::AbstractMatrix,
   j_user_cb = cfunction(cached_j_user_wrap, Cint, (Cint, Cint, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}))
 
   n = length(lb)
-  z = copy(lb)
+  z = copy(z)
+  for i = 1:n
+      if lb[i] > z[i]
+        z[i] = lb[i]
+    elseif ub[i] < z[i]
+        z[i] = ub[i]
+    end
+  end
   f = zeros(n)
 
   nnz = count_nonzeros(M)
