@@ -66,6 +66,7 @@
     n = 4
     lb = zeros(n)
     ub = 100*ones(n)
+    z0 = 2 * copy(ub)
 
     var_name = ["first var", "second var", "third var", "fourth var"]
     con_name = ["func 1", "func 2", "func 3", "func 4"]
@@ -78,10 +79,16 @@
     status, z, f = solveMCP(elemfunc, lb, ub)
     status, z, f = solveMCP(elemfunc, lb, ub, var_name)
     status, z, f = solveMCP(elemfunc, lb, ub, var_name, con_name)
+    status, z, f = solveMCP(elemfunc, lb, ub, z0)
+    status, z, f = solveMCP(elemfunc, lb, ub, z0, var_name)
+    status, z, f = solveMCP(elemfunc, lb, ub, z0, var_name, con_name)
+
     status, z, f = solveMCP(elemfunc, jacfunc, lb, ub)
     status, z, f = solveMCP(elemfunc, jacfunc, lb, ub, var_name)
     status, z, f = solveMCP(elemfunc, jacfunc, lb, ub, var_name, con_name)
-
+    status, z, f = solveMCP(elemfunc, jacfunc, lb, ub, z0)
+    status, z, f = solveMCP(elemfunc, jacfunc, lb, ub, z0, var_name)
+    status, z, f = solveMCP(elemfunc, jacfunc, lb, ub, z0, var_name, con_name)
 
     @show status
     @show z

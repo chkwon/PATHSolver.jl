@@ -35,19 +35,60 @@ const status =
 count_nonzeros(M::AbstractSparseMatrix) = nnz(M)
 count_nonzeros(M::AbstractMatrix) = count(x -> x != 0, M) # fallback for dense matrices
 
-function solveMCP(f_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL)
-  j_eval = x -> ForwardDiff.jacobian(f_eval, x)
-  return solveMCP(f_eval, j_eval, lb, ub, var_name, con_name)
+# solveMCP without z0, without j_eval
+function solveMCP(f_eval::Function,
+                  lb::Vector{T}, ub::Vector{T},
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0)) where {T <: Number, S <: String}
+
+  return solveMCP(f_eval, lb, ub, copy(lb), var_name, con_name)
 end
 
-function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, var_name=C_NULL, con_name=C_NULL)
+# solveMCP without z0, with j_eval
+function solveMCP(f_eval::Function, j_eval::Function,
+                  lb::Vector{T}, ub::Vector{T},
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0)) where {T <: Number, S <: String}
+
+  return solveMCP(f_eval, j_eval, lb, ub, copy(lb), var_name, con_name)
+end
+
+
+# solveMCP with z0, without j_eval
+function solveMCP(f_eval::Function,
+                  lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0))  where {T <: Number, S <: String}
+
+  j_eval = x -> ForwardDiff.jacobian(f_eval, x)
+  return solveMCP(f_eval, j_eval, lb, ub, z0, var_name, con_name)
+end
+
+
+# Full implementation of solveMCP  / solveMCP with z0, with j_eval
+function solveMCP(f_eval::Function, j_eval::Function,
+                  lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0)) where {T <: Number, S <: String}
+
+    if length(var_name)==0
+        var_name = C_NULL
+    end
+
+    if length(con_name)==0
+        con_name = C_NULL
+    end
+
   user_f[] = f_eval
   user_j[] = j_eval
   f_user_cb = cfunction(f_user_wrap, Cint, (Cint, Ptr{Cdouble}, Ptr{Cdouble}))
   j_user_cb = cfunction(j_user_wrap, Cint, (Cint, Cint, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}))
 
   n = length(lb)
-  z = copy(lb)
+  z = copy(z0)
+  for i = 1:n
+      if lb[i] > z[i]
+          z[i] = lb[i]
+      elseif ub[i] < z[i]
+          z[i] = ub[i]
+      end
+  end
   f = zeros(n)
 
   J0 = j_eval(z)
@@ -65,8 +106,21 @@ function solveMCP(f_eval::Function, j_eval::Function, lb::Vector, ub::Vector, va
   return status[t], z, f
 end
 
-function solveLCP(f_eval::Function, lb::AbstractVector, ub::AbstractVector,
-                  var_name=C_NULL, con_name=C_NULL; lcp_check=false)
+# solveLCP without z, without M
+function solveLCP(f_eval::Function,
+                  lb::Vector{T}, ub::Vector{T},
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  lcp_check=false) where {T <: Number, S <: String}
+
+    return solveLCP(f_eval, lb, ub, copy(lb), var_name, con_name, lcp_check=lcp_check)
+end
+
+# solveLCP with z0, without M
+function solveLCP(f_eval::Function,
+                  lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  lcp_check=false) where {T <: Number, S <: String}
+
   J = ForwardDiff.jacobian(f_eval, lb)
   if lcp_check
       Jr = ForwardDiff.jacobian(f_eval, rand(size(lb)))
@@ -75,12 +129,32 @@ function solveLCP(f_eval::Function, lb::AbstractVector, ub::AbstractVector,
       end
   end
 
-  solveLCP(f_eval, J, lb, ub, var_name, con_name)
+  return solveLCP(f_eval, J, lb, ub, z0, var_name, con_name)
 end
 
-function solveLCP(f_eval::Function, M::AbstractMatrix,
-                  lb::AbstractVector, ub::AbstractVector,
-                  var_name=C_NULL, con_name=C_NULL; lcp_check=false)
+# solveLCP without z, with M
+function solveLCP(f_eval::Function, M::Matrix,
+                  lb::Vector{T}, ub::Vector{T},
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  lcp_check=false) where {T <: Number, S <: String}
+
+    return solveLCP(f_eval, M, lb, ub, copy(lb), var_name, con_name, lcp_check=lcp_check)
+end
+
+
+# Full implmentation of solveLCP / solveLCP with z0, with M
+function solveLCP(f_eval::Function, M::Matrix,
+                  lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  lcp_check=false) where {T <: Number, S <: String}
+
+  if length(var_name)==0
+      var_name = C_NULL
+  end
+
+  if length(con_name)==0
+      con_name = C_NULL
+  end
 
   if lcp_check
       J = ForwardDiff.jacobian(f_eval, lb)
@@ -97,7 +171,14 @@ function solveLCP(f_eval::Function, M::AbstractMatrix,
   j_user_cb = cfunction(cached_j_user_wrap, Cint, (Cint, Cint, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}))
 
   n = length(lb)
-  z = copy(lb)
+  z = copy(z0)
+  for i = 1:n
+      if lb[i] > z[i]
+        z[i] = lb[i]
+    elseif ub[i] < z[i]
+        z[i] = ub[i]
+    end
+  end
   f = zeros(n)
 
   nnz = count_nonzeros(M)
@@ -111,6 +192,13 @@ function solveLCP(f_eval::Function, M::AbstractMatrix,
   remove_option_file()
   return status[t], z, f
 end
+
+
+
+
+
+
+
 
 function remove_option_file()
   if isfile("path.opt")
@@ -126,6 +214,14 @@ function options(;kwargs...)
   end
   close(opt_file)
 end
+
+
+
+
+
+
+
+
 
 
 ###############################################################################
