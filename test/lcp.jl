@@ -76,6 +76,7 @@
     n = 4
     lb = zeros(n)
     ub = 100*ones(n)
+    z0 = 2 * copy(ub)
 
     var_name = ["x1", "x2", "x3", "x4"]
     con_name = ["F1", "F2", "F3", "F4"]
@@ -85,9 +86,16 @@
     status, z, f = solveLCP(elemfunc, M, lb, ub)
     status, z, f = solveLCP(elemfunc, M, lb, ub, var_name)
     status, z, f = solveLCP(elemfunc, M, lb, ub, var_name, con_name)
+    status, z, f = solveLCP(elemfunc, M, lb, ub, z0)
+    status, z, f = solveLCP(elemfunc, M, lb, ub, z0, var_name)
+    status, z, f = solveLCP(elemfunc, M, lb, ub, z0, var_name, con_name)
+
     status, z, f = solveLCP(elemfunc, lb, ub)
     status, z, f = solveLCP(elemfunc, lb, ub, var_name)
     status, z, f = solveLCP(elemfunc, lb, ub, var_name, con_name)
+    status, z, f = solveLCP(elemfunc, lb, ub, z0)
+    status, z, f = solveLCP(elemfunc, lb, ub, z0, var_name)
+    status, z, f = solveLCP(elemfunc, lb, ub, z0, var_name, con_name)
 
     @show status
     @show z
