@@ -1,7 +1,5 @@
 # PATHSolver.jl
 
-[![PATHSolver](http://pkg.julialang.org/badges/PATHSolver_0.4.svg)](http://pkg.julialang.org/?pkg=PATHSolver)
-[![PATHSolver](http://pkg.julialang.org/badges/PATHSolver_0.5.svg)](http://pkg.julialang.org/?pkg=PATHSolver)
 [![PATHSolver](http://pkg.julialang.org/badges/PATHSolver_0.6.svg)](http://pkg.julialang.org/?pkg=PATHSolver)
 [![PATHSolver](http://pkg.julialang.org/badges/PATHSolver_0.7.svg)](http://pkg.julialang.org/?pkg=PATHSolver)
 
@@ -186,6 +184,26 @@ status, z, f = solveMCP(myfunc, myjac, lb, ub)
 status, z, f = solveMCP(myfunc, myjac, lb, ub, var_name)
 status, z, f = solveMCP(myfunc, myjac, lb, ub, var_name, con_name)
 ```
+
+
+# Warmstart
+
+You can provide initial values.
+
+```julia
+var_name = ["first var", "second var", "third var", "fourth var"]
+con_name = ["func 1", "func 2", "func 3", "func 4"]
+
+z0 = [0.0, 1.0, 2.0, 3.0]
+
+status, z, f = solveMCP(myfunc, lb, ub, z0)
+status, z, f = solveMCP(myfunc, lb, ub, z0, var_name)
+status, z, f = solveMCP(myfunc, lb, ub, z0, var_name, con_name)
+status, z, f = solveMCP(myfunc, myjac, lb, ub, z0)
+status, z, f = solveMCP(myfunc, myjac, lb, ub, z0, var_name)
+status, z, f = solveMCP(myfunc, myjac, lb, ub, z0, var_name, con_name)
+```
+
 
 # Solver Options
 Before solving the problem, you can set the solver options; for example:
