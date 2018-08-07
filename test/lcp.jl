@@ -59,6 +59,13 @@
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
     @test status == :Solved
 
+    M = sparse(M)
+    status, z, f = solveLCP(myfunc, lb, ub)
+    @show status
+    @show z
+    @show f
+    @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
+    @test status == :Solved
 
 
     println("-------------------------------------------------------")

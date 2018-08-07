@@ -106,9 +106,20 @@ function solveMCP(f_eval::Function, j_eval::Function,
   return status[t], z, f
 end
 
+
+
+
+
+
+
+############## LCP functions ################
+
+
+
+
 # solveLCP without z, without M
 function solveLCP(f_eval::Function,
-                  lb::Vector{T}, ub::Vector{T},
+                  lb::AbstractVector{T}, ub::AbstractVector{T},
                   var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
                   lcp_check=false) where {T <: Number, S <: String}
 
@@ -117,7 +128,7 @@ end
 
 # solveLCP with z0, without M
 function solveLCP(f_eval::Function,
-                  lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
+                  lb::AbstractVector{T}, ub::AbstractVector{T}, z0::AbstractVector{T},
                   var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
                   lcp_check=false) where {T <: Number, S <: String}
 
@@ -133,8 +144,8 @@ function solveLCP(f_eval::Function,
 end
 
 # solveLCP without z, with M
-function solveLCP(f_eval::Function, M::Matrix,
-                  lb::Vector{T}, ub::Vector{T},
+function solveLCP(f_eval::Function, M::AbstractMatrix,
+                  lb::AbstractVector{T}, ub::AbstractVector{T},
                   var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
                   lcp_check=false) where {T <: Number, S <: String}
 
@@ -143,8 +154,8 @@ end
 
 
 # Full implmentation of solveLCP / solveLCP with z0, with M
-function solveLCP(f_eval::Function, M::Matrix,
-                  lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
+function solveLCP(f_eval::Function, M::AbstractMatrix,
+                  lb::AbstractVector{T}, ub::AbstractVector{T}, z0::AbstractVector{T},
                   var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
                   lcp_check=false) where {T <: Number, S <: String}
 
