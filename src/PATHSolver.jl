@@ -2,11 +2,15 @@ module PATHSolver
 
 using ForwardDiff
 using FunctionWrappers: FunctionWrapper
+using SparseArrays
+using Random
+using LinearAlgebra
 
-if isfile(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
-  include(joinpath(dirname(dirname(@__FILE__)), "deps", "deps.jl"))
+const depsfile = joinpath(@__DIR__, "..", "deps", "deps.jl")
+if isfile(depsfile)
+    include(depsfile)
 else
-  error("PATHSolver not properly installed. Please run Pkg.build(\"PATHSolver\")")
+    error("PATHSolver not properly installed. Please re-build PATHSolver.")
 end
 
 export solveMCP, solveLCP, options
@@ -38,7 +42,8 @@ count_nonzeros(M::AbstractMatrix) = count(x -> x != 0, M) # fallback for dense m
 # solveMCP without z0, without j_eval
 function solveMCP(f_eval::Function,
                   lb::Vector{T}, ub::Vector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0)) where {T <: Number, S <: String}
+                  var_name::Vector{S}=Vector{String}(undef,0),
+                  con_name::Vector{S}=Vector{String}(undef,0)) where {T <: Number, S <: String}
 
   return solveMCP(f_eval, lb, ub, copy(lb), var_name, con_name)
 end
@@ -46,7 +51,7 @@ end
 # solveMCP without z0, with j_eval
 function solveMCP(f_eval::Function, j_eval::Function,
                   lb::Vector{T}, ub::Vector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0)) where {T <: Number, S <: String}
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(undef,0)) where {T <: Number, S <: String}
 
   return solveMCP(f_eval, j_eval, lb, ub, copy(lb), var_name, con_name)
 end
@@ -55,7 +60,8 @@ end
 # solveMCP with z0, without j_eval
 function solveMCP(f_eval::Function,
                   lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0))  where {T <: Number, S <: String}
+                  var_name::Vector{S}=Vector{String}(undef,0),
+                  con_name::Vector{S}=Vector{String}(undef,0)) where {T <: Number, S <: String}
 
   j_eval = x -> ForwardDiff.jacobian(f_eval, x)
   return solveMCP(f_eval, j_eval, lb, ub, z0, var_name, con_name)
@@ -65,7 +71,8 @@ end
 # Full implementation of solveMCP  / solveMCP with z0, with j_eval
 function solveMCP(f_eval::Function, j_eval::Function,
                   lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0)) where {T <: Number, S <: String}
+                  var_name::Vector{S}=Vector{String}(undef,0),
+                  con_name::Vector{S}=Vector{String}(undef,0)) where {T <: Number, S <: String}
 
     if length(var_name)==0
         var_name = C_NULL
@@ -99,7 +106,7 @@ function solveMCP(f_eval::Function, j_eval::Function,
            Ptr{Cdouble}, Ptr{Cdouble},
            Ptr{Cdouble}, Ptr{Cdouble},
            Ptr{Ptr{Cchar}}, Ptr{Ptr{Cchar}},
-           Ptr{Void}, Ptr{Void}),
+           Ptr{Nothing}, Ptr{Nothing}),
            n, nnz, z, f, lb, ub, var_name, con_name, f_user_cb, j_user_cb)
 
   remove_option_file()
@@ -120,7 +127,8 @@ end
 # solveLCP without z, without M
 function solveLCP(f_eval::Function,
                   lb::AbstractVector{T}, ub::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  var_name::Vector{S}=Vector{String}(undef,0),
+                  con_name::Vector{S}=Vector{String}(undef,0);
                   lcp_check=false) where {T <: Number, S <: String}
 
     return solveLCP(f_eval, lb, ub, copy(lb), var_name, con_name, lcp_check=lcp_check)
@@ -129,7 +137,8 @@ end
 # solveLCP with z0, without M
 function solveLCP(f_eval::Function,
                   lb::AbstractVector{T}, ub::AbstractVector{T}, z0::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  var_name::Vector{S}=Vector{String}(undef,0),
+                  con_name::Vector{S}=Vector{String}(undef,0);
                   lcp_check=false) where {T <: Number, S <: String}
 
   J = ForwardDiff.jacobian(f_eval, lb)
@@ -146,7 +155,8 @@ end
 # solveLCP without z, with M
 function solveLCP(f_eval::Function, M::AbstractMatrix,
                   lb::AbstractVector{T}, ub::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  var_name::Vector{S}=Vector{String}(undef,0),
+                  con_name::Vector{S}=Vector{String}(undef,0);
                   lcp_check=false) where {T <: Number, S <: String}
 
     return solveLCP(f_eval, M, lb, ub, copy(lb), var_name, con_name, lcp_check=lcp_check)
@@ -156,7 +166,8 @@ end
 # Full implmentation of solveLCP / solveLCP with z0, with M
 function solveLCP(f_eval::Function, M::AbstractMatrix,
                   lb::AbstractVector{T}, ub::AbstractVector{T}, z0::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  var_name::Vector{S}=Vector{String}(undef,0),
+                  con_name::Vector{S}=Vector{String}(undef,0);
                   lcp_check=false) where {T <: Number, S <: String}
 
   if length(var_name)==0
@@ -198,7 +209,7 @@ function solveLCP(f_eval::Function, M::AbstractMatrix,
            Ptr{Cdouble}, Ptr{Cdouble},
            Ptr{Cdouble}, Ptr{Cdouble},
            Ptr{Ptr{Cchar}}, Ptr{Ptr{Cchar}},
-           Ptr{Void}, Ptr{Void}),
+           Ptr{Nothing}, Ptr{Nothing}),
            n, nnz, z, f, lb, ub, var_name, con_name, f_user_cb, j_user_cb)
   remove_option_file()
   return status[t], z, f

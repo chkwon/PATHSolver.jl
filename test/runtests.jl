@@ -1,6 +1,6 @@
 using PATHSolver
-using ForwardDiff
-using Base.Test
+using ForwardDiff, SparseArrays, Random
+using Test
 
 include("sparse_matrix.jl")
 include("lcp.jl")
