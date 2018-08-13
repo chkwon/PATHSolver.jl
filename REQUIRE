@@ -1,7 +1,4 @@
 julia 0.7
 ForwardDiff 0.7
-BinDeps
+BinDeps 0.8
 FunctionWrappers 0.1
-SparseArrays
-Random
-LinearAlgebra
