@@ -38,34 +38,38 @@ count_nonzeros(M::AbstractMatrix) = count(x -> x != 0, M) # fallback for dense m
 # solveMCP without z0, without j_eval
 function solveMCP(f_eval::Function,
                   lb::Vector{T}, ub::Vector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0)) where {T <: Number, S <: String}
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  nnz=-1) where {T <: Number, S <: String}
 
-  return solveMCP(f_eval, lb, ub, copy(lb), var_name, con_name)
+  return solveMCP(f_eval, lb, ub, copy(lb), var_name, con_name; nnz=nnz)
 end
 
 # solveMCP without z0, with j_eval
 function solveMCP(f_eval::Function, j_eval::Function,
                   lb::Vector{T}, ub::Vector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0)) where {T <: Number, S <: String}
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  nnz=-1) where {T <: Number, S <: String}
 
-  return solveMCP(f_eval, j_eval, lb, ub, copy(lb), var_name, con_name)
+  return solveMCP(f_eval, j_eval, lb, ub, copy(lb), var_name, con_name; nnz=nnz)
 end
 
 
 # solveMCP with z0, without j_eval
 function solveMCP(f_eval::Function,
                   lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0))  where {T <: Number, S <: String}
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  nnz=-1)  where {T <: Number, S <: String}
 
   j_eval = x -> ForwardDiff.jacobian(f_eval, x)
-  return solveMCP(f_eval, j_eval, lb, ub, z0, var_name, con_name)
+  return solveMCP(f_eval, j_eval, lb, ub, z0, var_name, con_name; nnz=nnz)
 end
 
 
 # Full implementation of solveMCP  / solveMCP with z0, with j_eval
 function solveMCP(f_eval::Function, j_eval::Function,
                   lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0)) where {T <: Number, S <: String}
+                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(0);
+                  nnz=-1) where {T <: Number, S <: String}
 
     if length(var_name)==0
         var_name = C_NULL
@@ -91,8 +95,10 @@ function solveMCP(f_eval::Function, j_eval::Function,
   end
   f = zeros(n)
 
-  J0 = j_eval(z)
-  nnz = count_nonzeros(J0)
+  if nnz == -1
+      J0 = j_eval(z)
+      nnz = count_nonzeros(J0)
+  end
 
   t = ccall( (:path_main, "libpath47julia"), Cint,
           (Cint, Cint,
