@@ -1,7 +1,9 @@
 module PATHSolver
 
+include("FunctionWrappersQuickFix.jl")
+
 using ForwardDiff
-using FunctionWrappers: FunctionWrapper
+using .FunctionWrappersQuickFix: FunctionWrapper
 using SparseArrays
 using Random
 using LinearAlgebra
