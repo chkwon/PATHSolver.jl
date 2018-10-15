@@ -130,7 +130,7 @@ end
 # solveMCP without z0, with j_eval
 function solveMCP(f_eval::Function, j_eval::Function,
                   lb::Vector{T}, ub::Vector{T},
-                  var_name::Vector{S}=Vector{String}(0), con_name::Vector{S}=Vector{String}(undef,0)) where {T <: Number, S <: String}
+                  var_name::Vector{S}=Vector{String}(undef,0), con_name::Vector{S}=Vector{String}(undef,0)) where {T <: Number, S <: String}
 
   return solveMCP(f_eval, j_eval, lb, ub, copy(lb), var_name, con_name)
 end
@@ -221,7 +221,7 @@ function solveLCP(f_eval::Function,
 
   J = ForwardDiff.jacobian(f_eval, lb)
   if lcp_check
-      Jr = ForwardDiff.jacobian(f_eval, rand(size(lb)))
+      Jr = ForwardDiff.jacobian(f_eval, rand(Float64, size(lb)))
       if opnorm(J-Jr, 1) > 1e-8
           error("The problem does not seem linear. Use `solveMCP()` instead.")
       end
