@@ -124,15 +124,16 @@ function solveMCP(f_eval::Function,
                   var_name::Vector{S}=Vector{String}(undef,0),
                   con_name::Vector{S}=Vector{String}(undef,0)) where {T <: Number, S <: String}
 
-  return solveMCP(f_eval, lb, ub, copy(lb), var_name, con_name)
+  return solveMCP(f_eval, lb, ub, copy(lb), var_name, con_name; nnz=nnz)
 end
 
 # solveMCP without z0, with j_eval
 function solveMCP(f_eval::Function, j_eval::Function,
                   lb::Vector{T}, ub::Vector{T},
-                  var_name::Vector{S}=Vector{String}(undef,0), con_name::Vector{S}=Vector{String}(undef,0)) where {T <: Number, S <: String}
+                  var_name::Vector{S}=Vector{String}(undef,0), 
+                  con_name::Vector{S}=Vector{String}(undef,0)) where {T <: Number, S <: String}
 
-  return solveMCP(f_eval, j_eval, lb, ub, copy(lb), var_name, con_name)
+  return solveMCP(f_eval, j_eval, lb, ub, copy(lb), var_name, con_name; nnz=nnz)
 end
 
 
@@ -143,7 +144,7 @@ function solveMCP(f_eval::Function,
                   con_name::Vector{S}=Vector{String}(undef,0)) where {T <: Number, S <: String}
 
   j_eval = x -> ForwardDiff.jacobian(f_eval, x)
-  return solveMCP(f_eval, j_eval, lb, ub, z0, var_name, con_name)
+  return solveMCP(f_eval, j_eval, lb, ub, z0, var_name, con_name; nnz=nnz)
 end
 
 
