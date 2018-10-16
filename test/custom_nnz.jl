@@ -7,7 +7,7 @@
 
     X1 = [n*l for n=1:N, l=1:L]
     X2 = [n*l for n=1:N, l=1:L]
-    β1 = linspace(-1., 1., L)
+    β1 = range(-1., stop=1., length=L)
     β2 = ones(L)
 
     # equation depends on β2 only if β1 is positive, so jacobian will have varying number of elements depending on β1
