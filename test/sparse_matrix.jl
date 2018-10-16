@@ -5,10 +5,10 @@
     m, n = size(A)
     @assert m==n
 
-    col_start = Array{Int}(n)
-    col_len = Array{Int}(n)
-    row = Array{Int}(0)
-    data = Array{Float64}(0)
+    col_start = Array{Int}(undef, n)
+    col_len = Array{Int}(undef, n)
+    row = Array{Int}(undef, 0)
+    data = Array{Float64}(undef, 0)
     for j in 1:n
       if j==1
         col_start[j] = 1
@@ -42,13 +42,13 @@
 
   sparse_matrix_csc(A::Matrix) = sparse_matrix_csc(convert(SparseMatrixCSC, A))
 
-  srand(42)
+  Random.seed!(42)
   for i in 1:100
     n = rand(5:20)
     M = sprandn(n, n, 0.1)
     @test sparse_matrix_csc(M) == sparse_matrix_reference(M)
 
-    Mf = full(M)
+    Mf = Matrix(M)
     @test sparse_matrix_csc(Mf) == sparse_matrix_reference(Mf)
     @test sparse_matrix_csc(Mf) == sparse_matrix_csc(M)
   end

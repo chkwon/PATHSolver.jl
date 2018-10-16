@@ -136,7 +136,7 @@
     println("-------------------------------------------------------")
 
 
-    M2 = rand(size(M))
+    M2 = rand(Float64, size(M))
     # @test_warn "does not match" solveLCP(elemfunc, M2, lb, ub, lcp_check=true)
     @test_throws ErrorException solveLCP(elemfunc, M2, lb, ub, lcp_check=true)
 end

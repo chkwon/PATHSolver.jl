@@ -89,12 +89,12 @@ provides(BuildProcess,
 
 
 
-@static if is_windows()
+@static if Sys.iswindows()
     push!(BinDeps.defaults, BuildProcess)
 end
 
 @BinDeps.install Dict(:libpath47julia => :libpath47julia)
 
-@static if is_windows()
+@static if Sys.iswindows()
     pop!(BinDeps.defaults)
 end

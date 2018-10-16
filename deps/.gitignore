@@ -4,3 +4,4 @@ usr
 deps.jl
 PathJulia*
 pathlib*
+build.log

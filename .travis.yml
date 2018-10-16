@@ -5,7 +5,8 @@ os:
     - linux
     - osx
 julia:
-    - 0.6
+    - 0.7
+    - 1.0
     - nightly
 matrix:
   allow_failures:
@@ -18,7 +19,7 @@ addons:
         - gfortran
 script:
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-    - julia -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.build("PATHSolver");  Pkg.build("PATHSolver"); Pkg.test("PATHSolver", coverage=true)'
+    - julia -e 'using Pkg; Pkg.clone(pwd()); Pkg.build("PATHSolver");  Pkg.build("PATHSolver"); Pkg.test("PATHSolver", coverage=true)'
 after_success:
     - echo $TRAVIS_JULIA_VERSION
-    - julia -e 'cd(Pkg.dir("PATHSolver")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+    - julia -e 'using Pkg; cd(Pkg.dir("PATHSolver")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
