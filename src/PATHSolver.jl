@@ -65,7 +65,7 @@ function j_user_wrap(n::Cint, expected_nnz::Cint, z_ptr::Ptr{Cdouble},
   if nnz(J) > expected_nnz
     println("nnz(J) = ", nnz(J))
     println("expected_nnz = ", expected_nnz)
-    error("Evaluated jacobian has more nonzero entries than were initially provided in solveMCP().")
+    error("Evaluated jacobian has more nonzero entries than were initially provided in solveMCP(). Try solveMCP(..., nnz=n^2).")
   end
   load_sparse_matrix(J, n, expected_nnz, col_start_ptr, col_len_ptr, row_ptr, data_ptr)
   return Cint(0)
@@ -180,9 +180,15 @@ function solveMCP(f_eval::Function, j_eval::Function,
   f = zeros(n)
 
   if nnz == -1
-      # J0 = j_eval(z)
-      # nnz = count_nonzeros(J0)
-      nnz = n * n
+    # overestimating number of nonzeros in Jacobian
+    nnz = max( count_nonzeros(j_eval(lb)), count_nonzeros(j_eval(ub)) )
+    nnz = max( nnz, count_nonzeros(j_eval(z)) )
+    for i in 1:2
+      z_rand = max.(lb, min.(ub, rand(Float64, n)))
+      nnz_rand = count_nonzeros(j_eval(z_rand))
+      nnz = max( nnz, nnz_rand )
+    end
+    nnz = min( 2 * nnz, n * n )
   end
 
   t = ccall( (:path_main, libpath47julia), Cint,
