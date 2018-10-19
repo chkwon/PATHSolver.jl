@@ -63,7 +63,9 @@ function j_user_wrap(n::Cint, expected_nnz::Cint, z_ptr::Ptr{Cdouble},
   z = unsafe_wrap(Array{Cdouble}, z_ptr, Int(n), own=false)
   J::SparseMatrixCSC{Cdouble, Cint} = user_j[](z)
   if nnz(J) > expected_nnz
-    error("Evaluated jacobian has more nonzero entries than were initially provided in solveMCP()")
+    println("nnz(J) = ", nnz(J))
+    println("expected_nnz = ", expected_nnz)
+    error("Evaluated jacobian has more nonzero entries than were initially provided in solveMCP().")
   end
   load_sparse_matrix(J, n, expected_nnz, col_start_ptr, col_len_ptr, row_ptr, data_ptr)
   return Cint(0)
@@ -120,28 +122,30 @@ end
 
 # solveMCP without z0, without j_eval
 function solveMCP(f_eval::Function,
-                  lb::Vector{T}, ub::Vector{T},
+                  lb::AbstractVector{T}, ub::AbstractVector{T},
                   var_name::Vector{S}=Vector{String}(undef,0),
                   con_name::Vector{S}=Vector{String}(undef,0);
                   nnz=-1) where {T <: Number, S <: String}
 
-  return solveMCP(f_eval, lb, ub, copy(lb), var_name, con_name; nnz=nnz)
+  z0 = (lb + ub) ./ 2
+  return solveMCP(f_eval, lb, ub, z0, var_name, con_name; nnz=nnz)
 end
 
 # solveMCP without z0, with j_eval
 function solveMCP(f_eval::Function, j_eval::Function,
-                  lb::Vector{T}, ub::Vector{T},
+                  lb::AbstractVector{T}, ub::AbstractVector{T},
                   var_name::Vector{S}=Vector{String}(undef,0),
                   con_name::Vector{S}=Vector{String}(undef,0);
                   nnz=-1) where {T <: Number, S <: String}
 
-  return solveMCP(f_eval, j_eval, lb, ub, copy(lb), var_name, con_name; nnz=nnz)
+  z0 = (lb + ub) ./ 2
+  return solveMCP(f_eval, j_eval, lb, ub, z0, var_name, con_name; nnz=nnz)
 end
 
 
 # solveMCP with z0, without j_eval
 function solveMCP(f_eval::Function,
-                  lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
+                  lb::AbstractVector{T}, ub::AbstractVector{T}, z0::AbstractVector{T},
                   var_name::Vector{S}=Vector{String}(undef,0),
                   con_name::Vector{S}=Vector{String}(undef,0);
                   nnz=-1) where {T <: Number, S <: String}
@@ -153,18 +157,18 @@ end
 
 # Full implementation of solveMCP  / solveMCP with z0, with j_eval
 function solveMCP(f_eval::Function, j_eval::Function,
-                  lb::Vector{T}, ub::Vector{T}, z0::Vector{T},
+                  lb::AbstractVector{T}, ub::AbstractVector{T}, z0::AbstractVector{T},
                   var_name::Vector{S}=Vector{String}(undef,0),
                   con_name::Vector{S}=Vector{String}(undef,0);
                   nnz=-1) where {T <: Number, S <: String}
 
-    if length(var_name)==0
-        var_name = C_NULL
-    end
+  if length(var_name)==0
+    var_name = C_NULL
+  end
 
-    if length(con_name)==0
-        con_name = C_NULL
-    end
+  if length(con_name)==0
+    con_name = C_NULL
+  end
 
   user_f[] = f_eval
   user_j[] = j_eval
@@ -172,22 +176,16 @@ function solveMCP(f_eval::Function, j_eval::Function,
   j_user_cb = @cfunction(j_user_wrap, Cint, (Cint, Cint, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}))
 
   n = length(lb)
-  z = copy(z0)
-  for i = 1:n
-      if lb[i] > z[i]
-          z[i] = lb[i]
-      elseif ub[i] < z[i]
-          z[i] = ub[i]
-      end
-  end
+  z = max.(lb, min.(ub, z0))
   f = zeros(n)
 
   if nnz == -1
-      J0 = j_eval(z)
-      nnz = count_nonzeros(J0)
+      # J0 = j_eval(z)
+      # nnz = count_nonzeros(J0)
+      nnz = n * n
   end
 
-  t = ccall( (:path_main, "libpath47julia"), Cint,
+  t = ccall( (:path_main, libpath47julia), Cint,
           (Cint, Cint,
            Ptr{Cdouble}, Ptr{Cdouble},
            Ptr{Cdouble}, Ptr{Cdouble},
@@ -278,14 +276,7 @@ function solveLCP(f_eval::Function, M::AbstractMatrix,
   j_user_cb = @cfunction(cached_j_user_wrap, Cint, (Cint, Cint, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}))
 
   n = length(lb)
-  z = copy(z0)
-  for i = 1:n
-      if lb[i] > z[i]
-        z[i] = lb[i]
-    elseif ub[i] < z[i]
-        z[i] = ub[i]
-    end
-  end
+  z = max.(lb, min.(ub, z0))
   f = zeros(n)
 
   nnzs = count_nonzeros(M)
