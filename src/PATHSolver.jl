@@ -47,8 +47,6 @@ count_nonzeros(M::AbstractMatrix) = count(x -> x != 0, M) # fallback for dense m
 # wrappers for callback functions
 ###############################################################################
 # static int (*f_eval)(int n, double *z, double *f);
-# static int (*j_eval)(int n, int nnz, double *z, int *col_start, int *col_len,
-      # int *row, double *data);
 function f_user_wrap(n::Cint, z_ptr::Ptr{Cdouble}, f_ptr::Ptr{Cdouble})
   z = unsafe_wrap(Array{Cdouble}, z_ptr, Int(n), own=false)
   f = unsafe_wrap(Array{Cdouble}, f_ptr, Int(n), own=false)
@@ -56,11 +54,13 @@ function f_user_wrap(n::Cint, z_ptr::Ptr{Cdouble}, f_ptr::Ptr{Cdouble})
   return Cint(0)
 end
 
+# static int (*j_eval)(int n, int nnz, double *z, int *col_start, int *col_len,
+#                      int *row, double *data);
 function j_user_wrap(n::Cint, expected_nnz::Cint, z_ptr::Ptr{Cdouble},
                      col_start_ptr::Ptr{Cint}, col_len_ptr::Ptr{Cint},
                      row_ptr::Ptr{Cint}, data_ptr::Ptr{Cdouble})
 
-  z = unsafe_wrap(Array{Cdouble}, z_ptr, Int(n), own=false)
+  z = unsafe_wrap(Array{Cdouble}, z_ptr, Cint(n), own=false)
   J::SparseMatrixCSC{Cdouble, Cint} = user_j[](z)
   if nnz(J) > expected_nnz
     println("nnz(J) = ", nnz(J))
