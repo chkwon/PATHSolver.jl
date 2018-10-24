@@ -196,7 +196,7 @@ function solveMCP(f_eval::Function, j_eval::Function,
            Ptr{Cdouble}, Ptr{Cdouble},
            Ptr{Cdouble}, Ptr{Cdouble},
            Ptr{Ptr{Cchar}}, Ptr{Ptr{Cchar}},
-           Ptr{Nothing}, Ptr{Nothing}),
+           Ptr{Cvoid}, Ptr{Cvoid}),
            n, nnz, z, f, lb, ub, var_name, con_name, f_user_cb, j_user_cb)
 
   remove_option_file()
@@ -292,7 +292,7 @@ function solveLCP(f_eval::Function, M::AbstractMatrix,
            Ptr{Cdouble}, Ptr{Cdouble},
            Ptr{Cdouble}, Ptr{Cdouble},
            Ptr{Ptr{Cchar}}, Ptr{Ptr{Cchar}},
-           Ptr{Nothing}, Ptr{Nothing}),
+           Ptr{Cvoid}, Ptr{Cvoid}),
            n, nnzs, z, f, lb, ub, var_name, con_name, f_user_cb, j_user_cb)
 
   remove_option_file()
