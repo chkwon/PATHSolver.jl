@@ -123,8 +123,8 @@ end
 # solveMCP without z0, without j_eval
 function solveMCP(f_eval::Function,
                   lb::AbstractVector{T}, ub::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(undef,0),
-                  con_name::Vector{S}=Vector{String}(undef,0);
+                  var_name::AbstractVector{S}=String[],
+                  con_name::AbstractVector{S}=String[];
                   nnz=-1) where {T <: Number, S <: String}
 
   z0 = (lb + ub) ./ 2
@@ -134,8 +134,8 @@ end
 # solveMCP without z0, with j_eval
 function solveMCP(f_eval::Function, j_eval::Function,
                   lb::AbstractVector{T}, ub::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(undef,0),
-                  con_name::Vector{S}=Vector{String}(undef,0);
+                  var_name::AbstractVector{S}=String[],
+                  con_name::AbstractVector{S}=String[];
                   nnz=-1) where {T <: Number, S <: String}
 
   z0 = (lb + ub) ./ 2
@@ -146,8 +146,8 @@ end
 # solveMCP with z0, without j_eval
 function solveMCP(f_eval::Function,
                   lb::AbstractVector{T}, ub::AbstractVector{T}, z0::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(undef,0),
-                  con_name::Vector{S}=Vector{String}(undef,0);
+                  var_name::AbstractVector{S}=String[],
+                  con_name::AbstractVector{S}=String[];
                   nnz=-1) where {T <: Number, S <: String}
 
   j_eval = x -> ForwardDiff.jacobian(f_eval, x)
@@ -158,8 +158,8 @@ end
 # Full implementation of solveMCP  / solveMCP with z0, with j_eval
 function solveMCP(f_eval::Function, j_eval::Function,
                   lb::AbstractVector{T}, ub::AbstractVector{T}, z0::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(undef,0),
-                  con_name::Vector{S}=Vector{String}(undef,0);
+                  var_name::AbstractVector{S}=String[],
+                  con_name::AbstractVector{S}=String[];
                   nnz=-1) where {T <: Number, S <: String}
 
   if length(var_name)==0
@@ -216,8 +216,8 @@ end
 # solveLCP without z, without M
 function solveLCP(f_eval::Function,
                   lb::AbstractVector{T}, ub::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(undef,0),
-                  con_name::Vector{S}=Vector{String}(undef,0);
+                  var_name::AbstractVector{S}=String[],
+                  con_name::AbstractVector{S}=String[];
                   lcp_check=false) where {T <: Number, S <: String}
 
     return solveLCP(f_eval, lb, ub, copy(lb), var_name, con_name, lcp_check=lcp_check)
@@ -226,8 +226,8 @@ end
 # solveLCP with z0, without M
 function solveLCP(f_eval::Function,
                   lb::AbstractVector{T}, ub::AbstractVector{T}, z0::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(undef,0),
-                  con_name::Vector{S}=Vector{String}(undef,0);
+                  var_name::AbstractVector{S}=String[],
+                  con_name::AbstractVector{S}=String[];
                   lcp_check=false) where {T <: Number, S <: String}
 
   J = ForwardDiff.jacobian(f_eval, lb)
@@ -244,8 +244,8 @@ end
 # solveLCP without z, with M
 function solveLCP(f_eval::Function, M::AbstractMatrix,
                   lb::AbstractVector{T}, ub::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(undef,0),
-                  con_name::Vector{S}=Vector{String}(undef,0);
+                  var_name::AbstractVector{S}=String[],
+                  con_name::AbstractVector{S}=String[];
                   lcp_check=false) where {T <: Number, S <: String}
 
     return solveLCP(f_eval, M, lb, ub, copy(lb), var_name, con_name, lcp_check=lcp_check)
@@ -255,8 +255,8 @@ end
 # Full implmentation of solveLCP / solveLCP with z0, with M
 function solveLCP(f_eval::Function, M::AbstractMatrix,
                   lb::AbstractVector{T}, ub::AbstractVector{T}, z0::AbstractVector{T},
-                  var_name::Vector{S}=Vector{String}(undef,0),
-                  con_name::Vector{S}=Vector{String}(undef,0);
+                  var_name::AbstractVector{S}=String[],
+                  con_name::AbstractVector{S}=String[];
                   lcp_check=false) where {T <: Number, S <: String}
 
   if length(var_name)==0
