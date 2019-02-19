@@ -1,7 +1,7 @@
 # PATHSolver.jl
 
-[![PATHSolver](http://pkg.julialang.org/badges/PATHSolver_0.6.svg)](http://pkg.julialang.org/?pkg=PATHSolver)
-[![PATHSolver](http://pkg.julialang.org/badges/PATHSolver_0.7.svg)](http://pkg.julialang.org/?pkg=PATHSolver)
+<!-- [![PATHSolver](http://pkg.julialang.org/badges/PATHSolver_0.6.svg)](http://pkg.julialang.org/?pkg=PATHSolver)
+[![PATHSolver](http://pkg.julialang.org/badges/PATHSolver_0.7.svg)](http://pkg.julialang.org/?pkg=PATHSolver) -->
 
 
 [![Build Status](https://travis-ci.org/chkwon/PATHSolver.jl.svg?branch=master)](https://travis-ci.org/chkwon/PATHSolver.jl)
