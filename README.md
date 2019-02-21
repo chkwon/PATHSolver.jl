@@ -39,6 +39,11 @@ You can obtain the most recent `PATH_LICENSE_STRING` from [the website of the PA
 source ~/.bash_profile
 ```
 
+and then rebuild the package:
+
+```julia
+] build PATHSolver
+```
 
 # Installation
 
