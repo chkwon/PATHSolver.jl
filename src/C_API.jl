@@ -18,8 +18,13 @@ const INFINITY = 1e20
 ### Options.h
 ###
 
-struct Options
+mutable struct Options
     ptr::Ptr{Cvoid}
+    function Options(ptr::Ptr{Cvoid})
+        o = new(ptr)
+        finalizer(c_api_Options_Destroy, o)
+        return o
+    end
 end
 
 function c_api_Options_Create()
@@ -47,6 +52,11 @@ function c_api_Options_Read(o::Options, filename::String)
     return
 end
 
+function c_api_Path_AddOptions(o::Options)
+    @c_api(Path_AddOptions, Cvoid, (Ptr{Cvoid},), o.ptr)
+    return
+end
+
 ###
 ### MCP_Interface.h
 ###
@@ -59,18 +69,20 @@ mutable struct InterfaceData
     ub::Vector{Cdouble}
     F::Function
     J::Function
+    c_problem_size::Ptr{Cvoid}
+    c_bounds::Ptr{Cvoid}
+    c_function_eval::Ptr{Cvoid}
+    c_jacobian_eval::Ptr{Cvoid}
 end
 
 function _c_problem_size(
     id_ptr::Ptr{Cvoid}, n_ptr::Ptr{Cint}, nnz_ptr::Ptr{Cint}
 )
-    print("_c_problem_size")
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     n = unsafe_wrap(Array{Cint}, n_ptr, 1)
     n[1] = id_data.n
     nnz = unsafe_wrap(Array{Cint}, nnz_ptr, 1)
     nnz[1] = id_data.nnz
-    println("...finished")
     return
 end
 
@@ -81,7 +93,6 @@ function _c_bounds(
     lb_ptr::Ptr{Cdouble},
     ub_ptr::Ptr{Cdouble},
 )
-    print("_c_bounds")
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     z = unsafe_wrap(Array{Cdouble}, z_ptr, Int(n))
     lb = unsafe_wrap(Array{Cdouble}, lb_ptr, Int(n))
@@ -91,19 +102,16 @@ function _c_bounds(
         lb[i] = id_data.lb[i]
         ub[i] = id_data.ub[i]
     end
-    println("...finished")
     return
 end
 
 function _c_function_evaluation(
     id_ptr::Ptr{Cvoid}, n::Cint, x_ptr::Ptr{Cdouble}, f_ptr::Ptr{Cdouble}
 )
-    println("_c_function_evaluation")
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     x = unsafe_wrap(Array{Cdouble}, x_ptr, Int(n))
     f = unsafe_wrap(Array{Cdouble}, f_ptr, Int(n))
     err = id_data.F(n, x, f)
-    println("...finished")
     return err
 end
 
@@ -119,7 +127,6 @@ function _c_jacobian_evaluation(
     row_ptr::Ptr{Cint},
     data_ptr::Ptr{Cdouble}
 )
-    println("_c_jacobian_evaluation")
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     x = unsafe_wrap(Array{Cdouble}, x_ptr, n)
     err = Cint(0)
@@ -134,7 +141,6 @@ function _c_jacobian_evaluation(
     data = unsafe_wrap(Array{Cdouble}, data_ptr, nnz[1])
     err += id_data.J(n, nnz[1], x, col, len, row, data)
     nnz[1] = sum(len)
-    println("...finished")
     return err
 end
 
@@ -158,29 +164,10 @@ mutable struct MCP_Interface
     function MCP_Interface(interface_data::InterfaceData)
         return new(
             pointer_from_objref(interface_data),
-            @cfunction(
-                _c_problem_size,
-                Cvoid,
-                (Ptr{Cvoid}, Ptr{Cint}, Ptr{Cint})
-            ),
-            @cfunction(
-                _c_bounds,
-                Cvoid,
-                (Ptr{Cvoid}, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble})
-            ),
-            @cfunction(
-                _c_function_evaluation,
-                Cint,
-                (Ptr{Cvoid}, Cint, Ptr{Cdouble}, Ptr{Cdouble})
-            ),
-            @cfunction(
-                _c_jacobian_evaluation,
-                Cint,
-                (
-                    Ptr{Cvoid}, Cint, Ptr{Cdouble}, Cint, Ptr{Cdouble},
-                    Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}
-                )
-            ),
+            interface_data.c_problem_size,
+            interface_data.c_bounds,
+            interface_data.c_function_eval,
+            interface_data.c_jacobian_eval,
             C_NULL,
             C_NULL,
             C_NULL,
@@ -194,11 +181,16 @@ mutable struct MCP
     n::Int
     ptr::Ptr{Cvoid}
     id_data::Union{Nothing, InterfaceData}
+    function MCP(n::Int, ptr::Ptr{Cvoid})
+        m = new(n, ptr, nothing)
+        finalizer(c_api_MCP_Destroy, m)
+        return m
+    end
 end
 
 function c_api_MCP_Create(n::Int, nnz::Int)
     ptr = @c_api(MCP_Create, Ptr{Cvoid}, (Cint, Cint), n, nnz)
-    return MCP(n, ptr, nothing)
+    return MCP(n, ptr)
 end
 
 function c_api_MCP_Destroy(m::MCP)
@@ -331,7 +323,7 @@ This function is unsafe! It assumes that the string has the form `Path X.Y.ZZ`.
 """
 function c_api_Path_Version()
     ptr = @c_api(Path_Version, Ptr{Cchar}, ())
-    return unsafe_string(ptr, 11)
+    return unsafe_string(ptr)
 end
 
 """
@@ -340,12 +332,7 @@ end
 Returns a MCP_Termination status
 """
 function c_api_Path_Solve(m::MCP, info::Information)
-    return @c_api(
-        Path_Solve,
-        Cint,
-        (Ptr{Cvoid}, Ref{Information}),
-        m.ptr, info
-    )
+    return @c_api(Path_Solve, Cint, (Ptr{Cvoid}, Ref{Information}), m.ptr, info)
 end
 
 ###
@@ -403,10 +390,44 @@ function solve_mcp(;
     nnz = Int(dnnz + 1)
 
     o = c_api_Options_Create()
+    c_api_Path_AddOptions(o)
     c_api_Options_Default(o)
 
     m = c_api_MCP_Create(n, nnz)
-    m.id_data = InterfaceData(Cint(n), Cint(nnz), z, lb, ub, F, J)
+
+    m.id_data = InterfaceData(
+        Cint(n),
+        Cint(nnz),
+        z,
+        lb,
+        ub,
+        F,
+        J,
+        @cfunction(
+            _c_problem_size,
+            Cvoid,
+            (Ptr{Cvoid}, Ptr{Cint}, Ptr{Cint})
+        ),
+        @cfunction(
+            _c_bounds,
+            Cvoid,
+            (Ptr{Cvoid}, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble})
+        ),
+        @cfunction(
+            _c_function_evaluation,
+            Cint,
+            (Ptr{Cvoid}, Cint, Ptr{Cdouble}, Ptr{Cdouble})
+        ),
+        @cfunction(
+            _c_jacobian_evaluation,
+            Cint,
+            (
+                Ptr{Cvoid}, Cint, Ptr{Cdouble}, Cint, Ptr{Cdouble},
+                Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}
+            )
+        )
+    )
+
     m_interface = MCP_Interface(m.id_data)
     c_api_MCP_SetInterface(m, m_interface)
 
@@ -417,13 +438,8 @@ function solve_mcp(;
 
     info = Information(use_start = true)
 
-    println("Beginning solve")
     status = c_api_Path_Solve(m, info)
-    println("Finished solve")
 
     X = c_api_MCP_GetX(m)
-
-    c_api_MCP_Destroy(m)
-    c_api_Options_Destroy(o)
     return MCP_Termination(status), X, info
 end

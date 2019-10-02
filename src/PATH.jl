@@ -1,5 +1,7 @@
 module PATH
 
+import SparseArrays
+
 include(joinpath(dirname(@__DIR__), "deps", "deps.jl"))
 
 include("C_API.jl")
