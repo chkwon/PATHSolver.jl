@@ -353,14 +353,14 @@ end
 ###
 
 """
-    solve_mcp(;
+    solve_mcp(
         z::Vector{Cdouble},
         lb::Vector{Cdouble},
         ub::Vector{Cdouble},
         F::Function,
-        J::Function,
-        option_file::String = "",
-        nnz::Int = length(lb)^2
+        J::Function;
+        nnz::Int = length(lb)^2,
+        kwargs...
     )
 
 Mathematically, the mixed complementarity problem is to find an x such that
@@ -378,17 +378,15 @@ lower and upper bounds.
 `F` is a function `F(n::Cint, x::Vector{Cdouble}, f::Vector{Cdouble})` that
 should calculate the function F(x) and store the result in `f`.
 """
-function solve_mcp(;
+function solve_mcp(
     lb::Vector{Cdouble},
     ub::Vector{Cdouble},
     z::Vector{Cdouble},
     F::Function,
-    J::Function,
+    J::Function;
     nnz::Int = length(lb)^2,
     kwargs...
 )
-    # c_api_Output_Default()
-
     n = length(z)
     @assert  length(z) == length(lb) == length(ub)
     if n == 0
@@ -462,4 +460,79 @@ function solve_mcp(;
 
     X = c_api_MCP_GetX(m)
     return MCP_Termination(status), X, info
+end
+
+function _linear_function(M, q)
+    return (n, x, f) -> begin
+        f .= M * x .+ q
+        return Cint(0)
+    end
+end
+
+function _linear_jacobian(M)
+    return (
+        n::Cint,
+        nnz::Cint,
+        x::Vector{Cdouble},
+        col::Vector{Cint},
+        len::Vector{Cint},
+        row::Vector{Cint},
+        data::Vector{Cdouble}
+    ) -> begin
+        @assert n == length(x) == length(col) == length(len) == size(M, 1) == size(M, 2)
+        @assert nnz == length(row) == length(data)
+        @assert nnz >= SparseArrays.nnz(M)
+        for i in 1:n
+            col[i] = M.colptr[i]
+            len[i] = M.colptr[i + 1] - M.colptr[i]
+        end
+        for (i, v) in enumerate(SparseArrays.rowvals(M))
+            row[i] = v
+        end
+        for (i, v) in enumerate(SparseArrays.nonzeros(M))
+            data[i] = v
+        end
+        return Cint(0)
+    end
+end
+
+"""
+    solve_mcp(;
+        z::Vector{Cdouble},
+        lb::Vector{Cdouble},
+        ub::Vector{Cdouble},
+        M::SparseArrays.CompressedSparseMatrixCSC{Cdouble, Cint},
+        q::Vector{Cdouble};
+        kwargs...
+    )
+
+Mathematically, the mixed complementarity problem is to find an x such that
+for each i, at least one of the following hold:
+
+   1.  F_i(x) = 0, lb_i <= (x)_i <= ub_i
+   2.  F_i(x) > 0, (x)_i = lb_i
+   3.  F_i(x) < 0, (x)_i = ub_i
+
+where F is a function `F(x) = M * x + q` from R^n to R^n, and lb and ub are
+prescribed lower and upper bounds.
+
+`z` is an initial starting point for the search.
+"""
+function solve_mcp(
+    lb::Vector{Cdouble},
+    ub::Vector{Cdouble},
+    z::Vector{Cdouble},
+    M::SparseArrays.SparseMatrixCSC{Cdouble, Cint},
+    q::Vector{Cdouble};
+    kwargs...
+)
+    return solve_mcp(
+        lb,
+        ub,
+        q,
+        _linear_function(M, q),
+        _linear_jacobian(M);
+        nnz = SparseArrays.nnz(M),
+        kwargs...
+    )
 end

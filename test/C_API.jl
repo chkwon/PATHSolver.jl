@@ -1,3 +1,5 @@
+using PATH, Test, SparseArrays
+
 @testset "CheckLicense" begin
     @test PATH.c_api_Path_CheckLicense(1, 1) > 0
 end
@@ -8,55 +10,21 @@ end
 end
 
 @testset "Example" begin
-    M = [
-        0  0 -1 -1;
-        0  0  1 -2;
-        1 -1  2 -2;
-        1  2 -2  4
-    ]
-    q = [2; 2; -2; -6]
-    my_func(x) = M * x .+ q
-    my_jac(x) = M
-
-    function F(n::Cint, x::Vector{Cdouble}, f::Vector{Cdouble})
-        f .= my_func(x)
-        return Cint(0)
-    end
-
-    function J(
-        n::Cint,
-        nnz::Cint,
-        x::Vector{Cdouble},
-        col::Vector{Cint},
-        len::Vector{Cint},
-        row::Vector{Cint},
-        data::Vector{Cdouble}
+    M = convert(
+        SparseArrays.SparseMatrixCSC{Cdouble, Cint},
+        SparseArrays.sparse([
+            0  0 -1 -1;
+            0  0  1 -2;
+            1 -1  2 -2;
+            1  2 -2  4
+        ])
     )
-        @assert n == length(x) == length(col) == length(len) == 4
-        @assert nnz == length(row) == length(data)
-        jac = my_jac(x)
-        i = 1
-        for c in 1:n
-            col[c] = i
-            len[c] = 0
-            for r in 1:n
-                if !iszero(M[r, c])
-                    data[i] = jac[r, c]
-                    row[i] = r
-                    len[c] += 1
-                    i += 1
-                end
-            end
-        end
-        return Cint(0)
-    end
-
     status, z, info = PATH.solve_mcp(
-        z = [0.0, 0.0, 0.0, 0.0],
-        lb = fill(0.0, 4),
-        ub = fill(10.0, 4),
-        F = F,
-        J = J
+        fill(0.0, 4),
+        fill(10.0, 4),
+        [0.0, 0.0, 0.0, 0.0],
+        M,
+        Float64[2, 2, -2, -6]
     )
     @test status == PATH.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
@@ -115,11 +83,11 @@ end
     end
 
     status, z, info = PATH.solve_mcp(
-        z = [1.0, 1.0, 1.0, 1.0],
-        lb = fill(0.0, 4),
-        ub = fill(10.0, 4),
-        F = F,
-        J = J,
+        fill(0.0, 4),
+        fill(10.0, 4),
+        [1.0, 1.0, 1.0, 1.0],
+        F,
+        J;
         output = "yes"
     )
     @test status == PATH.MCP_Solved

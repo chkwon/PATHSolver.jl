@@ -1,5 +1,6 @@
 module PATH
 
+import MathOptInterface
 import SparseArrays
 
 include(joinpath(dirname(@__DIR__), "deps", "deps.jl"))
