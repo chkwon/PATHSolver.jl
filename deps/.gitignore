@@ -1,0 +1,6 @@
+build.log
+deps.jl
+libpath*.a
+libpath*.dll
+libpath*.dylib
+libpath*.so

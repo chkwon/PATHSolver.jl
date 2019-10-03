@@ -15,10 +15,11 @@ end
         1  2 -2  4
     ]
     q = [2; 2; -2; -6]
+    my_func(x) = M * x .+ q
+    my_jac(x) = M
 
     function F(n::Cint, x::Vector{Cdouble}, f::Vector{Cdouble})
-        @assert n == length(x) == length(f) == 4
-        f .= M * x .+ q
+        f .= my_func(x)
         return Cint(0)
     end
 
@@ -33,13 +34,14 @@ end
     )
         @assert n == length(x) == length(col) == length(len) == 4
         @assert nnz == length(row) == length(data)
+        jac = my_jac(x)
         i = 1
         for c in 1:n
             col[c] = i
             len[c] = 0
             for r in 1:n
                 if !iszero(M[r, c])
-                    data[i] = M[r, c]
+                    data[i] = jac[r, c]
                     row[i] = r
                     len[c] += 1
                     i += 1
@@ -117,7 +119,8 @@ end
         lb = fill(0.0, 4),
         ub = fill(10.0, 4),
         F = F,
-        J = J
+        J = J,
+        output = "yes"
     )
     @test status == PATH.MCP_Solved
     @test isapprox(z, [1.28475, 0.972916, 0.909376, 1.17304], atol=1e-4)
