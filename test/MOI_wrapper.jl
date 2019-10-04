@@ -5,7 +5,7 @@ const MOI = MathOptInterface
 
 @testset "MOI.Name" begin
     model = PATH.Optimizer()
-    @test MOI.get(model, MOI.Name()) == PATH.c_api_Path_Version()
+    @test MOI.get(model, MOI.SolverName()) == PATH.c_api_Path_Version()
 end
 
 @testset "Example 1" begin

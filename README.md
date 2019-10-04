@@ -12,4 +12,5 @@ model = Model(with_optimizer(PATH.Optimizer))
 @constraint(model, [x + 2, x] in PATH.Complements())
 optimize!(model)
 value(x)
+termination_status(model)
 ```

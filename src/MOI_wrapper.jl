@@ -53,7 +53,7 @@ end
 MOI.supports(::Optimizer, ::MOI.ObjectiveSense) = false
 MOI.supports(::Optimizer, ::MOI.ObjectiveFunction) = false
 
-MOI.get(model::Optimizer, ::MOI.Name) = c_api_Path_Version()
+MOI.get(model::Optimizer, ::MOI.SolverName) = c_api_Path_Version()
 
 function MOI.get(model::Optimizer, ::MOI.VariablePrimalStart, x::MOI.VariableIndex)
     initial = get(model.ext, :variable_primal_start, nothing)
