@@ -157,7 +157,7 @@ function MOI.optimize!(model::Optimizer)
     lower, upper, initial = _bounds_and_starting(model)
     M, q = _F_linear_operator(model)
     status, x, info = solve_mcp(
-        lower, upper, initial, M, q; model.ext[:kwargs]...
+        M, q, lower, upper, initial; model.ext[:kwargs]...
     )
     model.ext[:solution] = Solution(status, x, info)
     return

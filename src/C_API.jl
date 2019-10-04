@@ -110,11 +110,11 @@ end
 mutable struct InterfaceData
     n::Cint
     nnz::Cint
-    z::Vector{Cdouble}
-    lb::Vector{Cdouble}
-    ub::Vector{Cdouble}
     F::Function
     J::Function
+    lb::Vector{Cdouble}
+    ub::Vector{Cdouble}
+    z::Vector{Cdouble}
 end
 
 function _c_problem_size(
@@ -407,11 +407,11 @@ end
 
 """
     solve_mcp(
-        z::Vector{Cdouble},
+        F::Function,
+        J::Function
         lb::Vector{Cdouble},
         ub::Vector{Cdouble},
-        F::Function,
-        J::Function;
+        z::Vector{Cdouble};
         nnz::Int = length(lb)^2,
         kwargs...
     )
@@ -432,11 +432,11 @@ lower and upper bounds.
 should calculate the function F(x) and store the result in `f`.
 """
 function solve_mcp(
+    F::Function,
+    J::Function,
     lb::Vector{Cdouble},
     ub::Vector{Cdouble},
-    z::Vector{Cdouble},
-    F::Function,
-    J::Function;
+    z::Vector{Cdouble};
     nnz::Int = length(lb)^2,
     kwargs...
 )
@@ -461,7 +461,7 @@ function solve_mcp(
 
     m = c_api_MCP_Create(n, nnz)
 
-    m.id_data = InterfaceData(Cint(n), Cint(nnz), z, lb, ub, F, J)
+    m.id_data = InterfaceData(Cint(n), Cint(nnz), F, J, lb, ub, z)
 
     m_interface = MCP_Interface(m.id_data)
     c_api_MCP_SetInterface(m, m_interface)
@@ -522,11 +522,11 @@ end
 
 """
     solve_mcp(;
-        z::Vector{Cdouble},
+        M::SparseArrays.CompressedSparseMatrixCSC{Cdouble, Cint},
+        q::Vector{Cdouble},
         lb::Vector{Cdouble},
         ub::Vector{Cdouble},
-        M::SparseArrays.CompressedSparseMatrixCSC{Cdouble, Cint},
-        q::Vector{Cdouble};
+        z::Vector{Cdouble};
         kwargs...
     )
 
@@ -543,19 +543,19 @@ prescribed lower and upper bounds.
 `z` is an initial starting point for the search.
 """
 function solve_mcp(
+    M::SparseArrays.SparseMatrixCSC{Cdouble, Cint},
+    q::Vector{Cdouble},
     lb::Vector{Cdouble},
     ub::Vector{Cdouble},
-    z::Vector{Cdouble},
-    M::SparseArrays.SparseMatrixCSC{Cdouble, Cint},
-    q::Vector{Cdouble};
+    z::Vector{Cdouble};
     kwargs...
 )
     return solve_mcp(
+        _linear_function(M, q),
+        _linear_jacobian(M),
         lb,
         ub,
-        q,
-        _linear_function(M, q),
-        _linear_jacobian(M);
+        z;
         nnz = SparseArrays.nnz(M),
         kwargs...
     )

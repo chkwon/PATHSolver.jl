@@ -20,11 +20,11 @@ end
         ])
     )
     status, z, info = PATH.solve_mcp(
+        M,
+        Float64[2, 2, -2, -6],
         fill(0.0, 4),
         fill(10.0, 4),
-        [0.0, 0.0, 0.0, 0.0],
-        M,
-        Float64[2, 2, -2, -6];
+        [0.0, 0.0, 0.0, 0.0];
         output = "no"
     )
     @test status == PATH.MCP_Solved
@@ -84,11 +84,11 @@ end
     end
 
     status, z, info = PATH.solve_mcp(
+        F,
+        J,
         fill(0.0, 4),
         fill(10.0, 4),
-        [1.0, 1.0, 1.0, 1.0],
-        F,
-        J;
+        [1.0, 1.0, 1.0, 1.0];
         output = "yes"
     )
     @test status == PATH.MCP_Solved
