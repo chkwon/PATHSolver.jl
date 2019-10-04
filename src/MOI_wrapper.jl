@@ -1,11 +1,13 @@
 const MOI = MathOptInterface
 
 """
-    Complements()
+    Complements(dimension::Int)
 """
-struct Complements <: MOI.AbstractVectorSet end
+struct Complements <: MOI.AbstractVectorSet
+    dimension::Int
+end
 
-MOI.copy(::Complements) = Complements()
+MOI.copy(c::Complements) = Complements(c.dimension)
 
 MOI.Utilities.@model(
     Optimizer,
@@ -29,7 +31,7 @@ solution(model::Optimizer) = get(model.ext, :solution, nothing)::Union{Nothing, 
 kwargs(model::Optimizer) = get(model.ext, :kwargs, nothing)
 
 """
-Optimizer(; kwargs...)
+    Optimizer(; kwargs...)
 """
 function Optimizer(; kwargs...)
     model = Optimizer{Float64}()
@@ -91,49 +93,69 @@ function _F_linear_operator(model::Optimizer)
         }()
     )
         Fi = MOI.get(model, MOI.ConstraintFunction(), index)
-        if !iszero(Fi.constants[2])
-            error("constants[2] not zero.")
+        Si = MOI.get(model, MOI.ConstraintSet(), index)
+
+        if 2 * Si.dimension != length(Fi.constants)
+            error("""
+            Dimension of constant vector $(length(Fi.constants)) does not match
+            the required dimension of the complementarity set $(2 * Si.dimension).
+            """)
+        elseif any(i -> !iszero(Fi.constants[Si.dimension + i]), 1:Si.dimension)
+            error("""
+            VectorAffineFunction malformed: a constant associated with the
+            complemented variable is not zero:
+            $(Fi.constants[Si.dimension+1:end]).
+            """)
         end
-        # First pass: get second element and check for invalid functions.
-        xi = nothing
+
+        # First pass: get rows vector and check for invalid functions.
+        rows = fill(0, Si.dimension)
         for term in Fi.terms
-            if term.output_index == 1
+            if term.output_index <= Si.dimension
                 # No-op: leave for second pass.
-            elseif term.output_index == 2
-                if xi !== nothing
-                    error("Only x in second term")
-                elseif term.scalar_term.coefficient != 1.0
-                    error("Need plain variable in second term")
-                end
-                xi = term.scalar_term.variable_index
-            else
-                error("Too many terms")
+                continue
+            elseif term.output_index > 2 * Si.dimension
+                error("""
+                VectorAffineFunction malformed: output_index $(term.output_index)
+                is too large.
+                """)
             end
+            dimension_i = term.output_index - Si.dimension
+            row_i = term.scalar_term.variable_index.value
+            if rows[dimension_i] != 0 || has_term[row_i]
+                error("""
+                The variable $(term.scalar_term.variable_index) appears in more
+                than one complementarity constraint.
+                """)
+            elseif term.scalar_term.coefficient != 1.0
+                error("""
+                VectorAffineFunction malformed: variable $(term.scalar_term.variable_index)
+                has a coefficient that is not 1 in row $(term.output_index) of
+                the VectorAffineFunction.
+                """)
+            end
+            rows[dimension_i] = row_i
+            has_term[row_i] = true
+            q[row_i] = Fi.constants[dimension_i]
         end
-        if xi === nothing
-            error("No second term")
-        end
-
-        row = xi.value
-
-        if has_term[row]
-            error("F not square.")
-        end
-
-        q[row] = Fi.constants[1]
 
         # Second pass: add to sparse array
         for term in Fi.terms
-            if term.output_index != 1
-                continue
-            end
             s_term = term.scalar_term
-            if iszero(s_term.coefficient)
+            if term.output_index > Si.dimension || iszero(s_term.coefficient)
                 continue
             end
-            M[row, s_term.variable_index.value] += s_term.coefficient
+            row_i = rows[term.output_index]
+            if iszero(row_i)
+                error("""
+                VectorAffineFunction malformed: expected variable in row
+                $(term.output_index).
+                """)
+            end
+            M[row_i, s_term.variable_index.value] += s_term.coefficient
         end
     end
+
     return M, q
 end
 
