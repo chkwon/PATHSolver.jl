@@ -18,14 +18,47 @@ const INFINITY = 1e20
 ### Output_Interface.h
 ###
 
-# function c_api_Output_Default(io)
-#     @c_api(Output_Default, Cvoid, (Ptr{Cvoid},), pointer_from_objref(io))
-#     return
-# end
+const c_api_Output_Log     = 1 << 0
+const c_api_Output_Status  = 1 << 1
+const c_api_Output_Listing = 1 << 2
 
-# function c_api_Output_SetLog(f)
-#     @c_api(Output_SetLog, Cvoid, ())
-# end
+function c_api_Output_Default()
+    @c_api(Output_Default, Cvoid, ())
+    return
+end
+
+mutable struct OutputInterface
+    output_data::Ptr{Cvoid}
+    print::Ptr{Cvoid}
+    flush::Ptr{Cvoid}
+end
+
+function _c_flush(data::Ptr{Cvoid}, mode::Cint)
+    io = unsafe_pointer_to_objref(data)::IO
+    flush(io)
+    return
+end
+
+function _c_print(data::Ptr{Cvoid}, mode::Cint, msg::Ptr{Cchar})
+    if mode in [1, 3, 5, 7]
+        # These modes are for the Output_Log.
+        # TODO(odow): print lines for the Output_Status and Output_Listing.
+        io = unsafe_pointer_to_objref(data)::IO
+        print(io, unsafe_string(msg))
+    end
+    return
+end
+
+function OutputInterface(io)
+    _C_PRINT = @cfunction(_c_print, Cvoid, (Ptr{Cvoid}, Cint, Ptr{Cchar}))
+    _C_FLUSH = @cfunction(_c_flush, Cvoid, (Ptr{Cvoid}, Cint))
+    return OutputInterface(pointer_from_objref(io), _C_PRINT, _C_FLUSH)
+end
+
+function c_api_Output_SetInterface(o::OutputInterface)
+    PATH.@c_api(Output_SetInterface, Cvoid, (Ref{OutputInterface},), o)
+    return
+end
 
 ###
 ### Options.h
@@ -56,7 +89,7 @@ function c_api_Options_Default(o::Options)
 end
 
 function c_api_Options_Display(o::Options)
-    @c_api(Options_Read, Cvoid, (Ptr{Cvoid},), o.ptr)
+    @c_api(Options_Display, Cvoid, (Ptr{Cvoid},), o.ptr)
     return
 end
 
@@ -82,10 +115,6 @@ mutable struct InterfaceData
     ub::Vector{Cdouble}
     F::Function
     J::Function
-    c_problem_size::Ptr{Cvoid}
-    c_bounds::Ptr{Cvoid}
-    c_function_eval::Ptr{Cvoid}
-    c_jacobian_eval::Ptr{Cvoid}
 end
 
 function _c_problem_size(
@@ -175,12 +204,36 @@ mutable struct MCP_Interface
     basis::Ptr{Cvoid}
 
     function MCP_Interface(interface_data::InterfaceData)
+        _C_PROBLEM_SIZE = @cfunction(
+            _c_problem_size,
+            Cvoid,
+            (Ptr{Cvoid}, Ptr{Cint}, Ptr{Cint})
+        )
+        _C_BOUNDS = @cfunction(
+            _c_bounds,
+            Cvoid,
+            (Ptr{Cvoid}, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble})
+        )
+        _C_FUNCTION_EVALUATION = @cfunction(
+            _c_function_evaluation,
+            Cint,
+            (Ptr{Cvoid}, Cint, Ptr{Cdouble}, Ptr{Cdouble})
+        )
+        _C_JACOBIAN_EVALUATION = @cfunction(
+            _c_jacobian_evaluation,
+            Cint,
+            (
+                Ptr{Cvoid}, Cint, Ptr{Cdouble}, Cint, Ptr{Cdouble},
+                Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}
+            )
+        )
+
         return new(
             pointer_from_objref(interface_data),
-            interface_data.c_problem_size,
-            interface_data.c_bounds,
-            interface_data.c_function_eval,
-            interface_data.c_jacobian_eval,
+            _C_PROBLEM_SIZE,
+            _C_BOUNDS,
+            _C_FUNCTION_EVALUATION,
+            _C_JACOBIAN_EVALUATION,
             C_NULL,
             C_NULL,
             C_NULL,
@@ -387,6 +440,8 @@ function solve_mcp(
     nnz::Int = length(lb)^2,
     kwargs...
 )
+    c_api_Output_SetInterface(OutputInterface(stdout))
+
     n = length(z)
     @assert  length(z) == length(lb) == length(ub)
     if n == 0
@@ -406,38 +461,7 @@ function solve_mcp(
 
     m = c_api_MCP_Create(n, nnz)
 
-    m.id_data = InterfaceData(
-        Cint(n),
-        Cint(nnz),
-        z,
-        lb,
-        ub,
-        F,
-        J,
-        @cfunction(
-            _c_problem_size,
-            Cvoid,
-            (Ptr{Cvoid}, Ptr{Cint}, Ptr{Cint})
-        ),
-        @cfunction(
-            _c_bounds,
-            Cvoid,
-            (Ptr{Cvoid}, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble})
-        ),
-        @cfunction(
-            _c_function_evaluation,
-            Cint,
-            (Ptr{Cvoid}, Cint, Ptr{Cdouble}, Ptr{Cdouble})
-        ),
-        @cfunction(
-            _c_jacobian_evaluation,
-            Cint,
-            (
-                Ptr{Cvoid}, Cint, Ptr{Cdouble}, Cint, Ptr{Cdouble},
-                Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}
-            )
-        )
-    )
+    m.id_data = InterfaceData(Cint(n), Cint(nnz), z, lb, ub, F, J)
 
     m_interface = MCP_Interface(m.id_data)
     c_api_MCP_SetInterface(m, m_interface)

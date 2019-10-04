@@ -9,7 +9,7 @@ using JuMP, PATH
 
 model = Model(with_optimizer(PATH.Optimizer))
 @variable(model, x >= 0)
-@constraint(model, [x + 2, x] in Complements())
+@constraint(model, [x + 2, x] in PATH.Complements())
 optimize!(model)
 value(x)
 ```

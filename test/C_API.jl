@@ -24,7 +24,8 @@ end
         fill(10.0, 4),
         [0.0, 0.0, 0.0, 0.0],
         M,
-        Float64[2, 2, -2, -6]
+        Float64[2, 2, -2, -6];
+        output = "no"
     )
     @test status == PATH.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
