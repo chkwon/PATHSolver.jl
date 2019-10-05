@@ -136,10 +136,10 @@ function _c_bounds(
     ub_ptr::Ptr{Cdouble},
 )
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
-    z = unsafe_wrap(Array{Cdouble}, z_ptr, Int(n))
-    lb = unsafe_wrap(Array{Cdouble}, lb_ptr, Int(n))
-    ub = unsafe_wrap(Array{Cdouble}, ub_ptr, Int(n))
-    for i in 1:n
+    z = unsafe_wrap(Array{Cdouble}, z_ptr, n)
+    lb = unsafe_wrap(Array{Cdouble}, lb_ptr, n)
+    ub = unsafe_wrap(Array{Cdouble}, ub_ptr, n)
+    for i = 1:n
         z[i] = id_data.z[i]
         lb[i] = id_data.lb[i]
         ub[i] = id_data.ub[i]
@@ -151,8 +151,8 @@ function _c_function_evaluation(
     id_ptr::Ptr{Cvoid}, n::Cint, x_ptr::Ptr{Cdouble}, f_ptr::Ptr{Cdouble}
 )
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
-    x = unsafe_wrap(Array{Cdouble}, x_ptr, Int(n))
-    f = unsafe_wrap(Array{Cdouble}, f_ptr, Int(n))
+    x = unsafe_wrap(Array{Cdouble}, x_ptr, n)
+    f = unsafe_wrap(Array{Cdouble}, f_ptr, n)
     err = id_data.F(n, x, f)
     return err
 end
@@ -276,7 +276,7 @@ end
 
 function c_api_MCP_GetX(m::MCP)
     ptr = @c_api(MCP_GetX, Ptr{Cdouble}, (Ptr{Cvoid},), m.ptr)
-    return copy(unsafe_wrap(Array, ptr, m.n))
+    return copy(unsafe_wrap(Array{Cdouble}, ptr, m.n))
 end
 
 ###
@@ -384,8 +384,6 @@ end
     c_api_Path_Version()
 
 Return a string of the PATH version.
-
-This function is unsafe! It assumes that the string has the form `Path X.Y.ZZ`.
 """
 function c_api_Path_Version()
     ptr = @c_api(Path_Version, Ptr{Cchar}, ())
@@ -395,7 +393,7 @@ end
 """
     c_api_Path_Solve(m::MCP, info::Information)
 
-Returns a MCP_Termination status
+Returns a MCP_Termination status.
 """
 function c_api_Path_Solve(m::MCP, info::Information)
     return @c_api(Path_Solve, Cint, (Ptr{Cvoid}, Ref{Information}), m.ptr, info)
@@ -440,15 +438,16 @@ function solve_mcp(
     nnz::Int = length(lb)^2,
     kwargs...
 )
+    @assert length(z) == length(lb) == length(ub)
+
     c_api_Output_SetInterface(OutputInterface(stdout))
 
     n = length(z)
-    @assert  length(z) == length(lb) == length(ub)
     if n == 0
         return MCP_Solved, nothing, nothing
     end
 
-    # Convert `Int` to floating point for check.
+    # Convert `Int` to `Float64` for check to avoid overflow.
     dnnz = min(1.0 * nnz, 1.0 * n^2)
     if dnnz > typemax(Cint)
         return MCP_Error, nothing, nothing
@@ -486,14 +485,22 @@ function solve_mcp(
     return MCP_Termination(status), X, info
 end
 
-function _linear_function(M, q)
-    return (n, x, f) -> begin
+function _linear_function(M::AbstractMatrix, q::Vector)
+    if size(M, 1) != size(M, 2)
+        error("M not square! size = $(size(M))")
+    elseif size(M, 1) != length(q)
+        error("q is wrong shape. Expected $(size(M, 1)), got $(length(q)).")
+    end
+    return (n::Cint, x::Vector{Cdouble}, f::Vector{Cdouble}) -> begin
         f .= M * x .+ q
         return Cint(0)
     end
 end
 
-function _linear_jacobian(M)
+function _linear_jacobian(M::SparseArrays.SparseMatrixCSC{Cdouble, Cint})
+    if size(M, 1) != size(M, 2)
+        error("M not square! size = $(size(M))")
+    end
     return (
         n::Cint,
         nnz::Cint,
@@ -503,10 +510,10 @@ function _linear_jacobian(M)
         row::Vector{Cint},
         data::Vector{Cdouble}
     ) -> begin
-        @assert n == length(x) == length(col) == length(len) == size(M, 1) == size(M, 2)
+        @assert n == length(x) == length(col) == length(len) == size(M, 1)
         @assert nnz == length(row) == length(data)
         @assert nnz >= SparseArrays.nnz(M)
-        for i in 1:n
+        for i = 1:n
             col[i] = M.colptr[i]
             len[i] = M.colptr[i + 1] - M.colptr[i]
         end

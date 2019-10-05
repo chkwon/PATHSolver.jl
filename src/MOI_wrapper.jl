@@ -2,6 +2,33 @@ const MOI = MathOptInterface
 
 """
     Complements(dimension::Int)
+
+The set corresponding to a mixed complementarity constraint.
+
+Complementarity constraints should be specified with an
+[`AbstractVectorFunction`](@ref)-in-`Complements(dimension)` constraint.
+
+If `F` function, then the dimension of `F` must be `2 * dimension`. This defines
+a complementarity constraint between `F[i]` and `F[i + dimension]`. Thus,
+`F[i + dimension]` must be interpretable as a single variable (e.g., `1.0 * x +
+0.0`).
+
+If a variable `x_i` is constrained in `Interval(lb, ub)`, then mathematically,
+the mixed complementarity problem is to find a solution such that at least one
+of the following holds:
+
+  1.  F_i(x) = 0, lb <= x_i <= ub_i
+  2.  F_i(x) > 0, lb == x_i
+  3.  F_i(x) < 0,       x_i == ub_i
+
+Classically, the bounding set for `x_i` is `Interval(0, Inf)`, which recovers:
+0 <= F_i(x) ⟂ x >= 0, where the `⟂` operator implies F_i(x) * x = 0.
+
+### Examples
+
+    [x, y] -in- Complements(1)
+    [x, y, u, w] -in- Complements(2)
+    [2 * x - 3, x] -in- Complements(1)
 """
 struct Complements <: MOI.AbstractVectorSet
     dimension::Int
@@ -21,25 +48,6 @@ MOI.Utilities.@model(
     (MOI.VectorAffineFunction,),  # Typed vector functions
 )
 
-struct Solution
-    status::MCP_Termination
-    x::Vector{Float64}
-    info::Information
-end
-
-solution(model::Optimizer) = get(model.ext, :solution, nothing)::Union{Nothing, Solution}
-kwargs(model::Optimizer) = get(model.ext, :kwargs, nothing)
-
-"""
-    Optimizer(; kwargs...)
-"""
-function Optimizer(; kwargs...)
-    model = Optimizer{Float64}()
-    model.ext[:kwargs] = kwargs
-    model.ext[:solution] = nothing
-    return model
-end
-
 function MOI.supports_constraint(
     ::Optimizer, ::Type{MOI.SingleVariable}, ::Type{S}
 ) where {S <: MOI.AbstractScalarFunction}
@@ -55,9 +63,44 @@ end
 MOI.supports(::Optimizer, ::MOI.ObjectiveSense) = false
 MOI.supports(::Optimizer, ::MOI.ObjectiveFunction) = false
 
+struct Solution
+    status::MCP_Termination
+    x::Vector{Float64}
+    info::Information
+end
+
+solution(model::Optimizer) = get(model.ext, :solution, nothing)::Union{Nothing, Solution}
+kwargs(model::Optimizer) = get(model.ext, :kwargs, nothing)
+
+"""
+    Optimizer(; kwargs...)
+
+Define a new PATH optimizer, passing options as keyword arguments.
+
+Common options include:
+
+ - output="yes"
+ - convergence_tolerance=1e-6
+ - time_limit=3600
+
+A full list of options can be found at http://pages.cs.wisc.edu/~ferris/path/options.pdf.
+
+### Example
+
+    PATH.Optimizer(output = "no")
+"""
+function Optimizer(; kwargs...)
+    model = Optimizer{Float64}()
+    model.ext[:kwargs] = kwargs
+    model.ext[:solution] = nothing
+    return model
+end
+
 MOI.get(model::Optimizer, ::MOI.SolverName) = c_api_Path_Version()
 
-function MOI.get(model::Optimizer, ::MOI.VariablePrimalStart, x::MOI.VariableIndex)
+function MOI.get(
+    model::Optimizer, ::MOI.VariablePrimalStart, x::MOI.VariableIndex
+)
     initial = get(model.ext, :variable_primal_start, nothing)
     if initial === nothing
         return nothing
@@ -212,10 +255,12 @@ function MOI.get(model::Optimizer, ::MOI.ResultCount)
     return solution(model) !== nothing ? 1 : 0
 end
 
-function MOI.get(model::Optimizer, attr::MOI.VariablePrimal, x::MOI.VariableIndex)
+function MOI.get(
+    model::Optimizer, attr::MOI.VariablePrimal, x::MOI.VariableIndex
+)
     MOI.check_result_index_bounds(model, attr)
     if solution(model) === nothing
-        error("No solution")
+        error("Unable to query VariablePrimal: OPTIMIZE_NOT_CALLED.")
     end
     return solution(model).x[x.value]
 end
