@@ -229,26 +229,35 @@ function MOI.optimize!(model::Optimizer)
 end
 
 const _MCP_TERMINATION_STATUS_MAP =
-    Dict{MCP_Termination, MOI.TerminationStatusCode}(
-        MCP_Solved => MOI.LOCALLY_SOLVED,
-        MCP_NoProgress => MOI.SLOW_PROGRESS,
-        MCP_MajorIterationLimit => MOI.ITERATION_LIMIT,
-        MCP_MinorIterationLimit => MOI.ITERATION_LIMIT,
-        MCP_TimeLimit => MOI.TIME_LIMIT,
-        MCP_UserInterrupt => MOI.INTERRUPTED,
-        MCP_BoundError => MOI.OTHER_ERROR,
-        MCP_DomainError => MOI.NUMERICAL_ERROR,
-        MCP_Infeasible => MOI.INFEASIBLE,
-        MCP_Error => MOI.OTHER_ERROR,
-        MCP_LicenseError => MOI.OTHER_ERROR,
-        MCP_OK => MOI.OTHER_ERROR
+    Dict{MCP_Termination, Tuple{MOI.TerminationStatusCode, String}}(
+        MCP_Solved => (MOI.LOCALLY_SOLVED, "The problem was solved"),
+        MCP_NoProgress => (MOI.SLOW_PROGRESS, "A stationary point was found"),
+        MCP_MajorIterationLimit => (MOI.ITERATION_LIMIT, "Major iteration limit met"),
+        MCP_MinorIterationLimit => (MOI.ITERATION_LIMIT, "Cumulative minor iterlim met"),
+        MCP_TimeLimit => (MOI.TIME_LIMIT, "Ran out of time"),
+        MCP_UserInterrupt => (MOI.INTERRUPTED, "Control-C, typically"),
+        MCP_BoundError => (MOI.OTHER_ERROR, "Problem has a bound error"),
+        MCP_DomainError => (MOI.NUMERICAL_ERROR, "Could not find a starting point"),
+        MCP_Infeasible => (MOI.INFEASIBLE, "Problem has no solution"),
+        MCP_Error => (MOI.OTHER_ERROR, "An error occured within the code"),
+        MCP_LicenseError => (MOI.OTHER_ERROR, "License could not be found"),
+        MCP_OK => (MOI.OTHER_ERROR, "")
     )
 
 function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
     if solution(model) === nothing
         return MOI.OPTIMIZE_NOT_CALLED
     end
-    return _MCP_TERMINATION_STATUS_MAP[solution(model).status]
+    status, _ = _MCP_TERMINATION_STATUS_MAP[solution(model).status]
+    return status
+end
+
+function MOI.get(model::Optimizer, ::MOI.RawStatusString)
+    if solution(model) === nothing
+        return "MOI.optimize! was not called yet"
+    end
+    _, reason = _MCP_TERMINATION_STATUS_MAP[solution(model).status]
+    return reason
 end
 
 function MOI.get(model::Optimizer, ::MOI.ResultCount)
@@ -266,7 +275,7 @@ function MOI.get(
 end
 
 function MOI.get(model::Optimizer, attr::MOI.PrimalStatus)
-    if solution(model) === nothing
+    if solution(model) === nothing || attr.N != 1
         return MOI.NO_SOLUTION
     end
     if MOI.get(model, MOI.TerminationStatus()) == MOI.LOCALLY_SOLVED

@@ -197,6 +197,10 @@ mutable struct MCP_Interface
     bounds::Ptr{Cvoid}
     function_evaluation::Ptr{Cvoid}
     jacobian_evaluation::Ptr{Cvoid}
+    # TODO(odow): the .h files I have don't include the hessian evaluation in
+    # MCP_Interface, but Standalone_Path.c includes it. Ask M. Ferris to look at
+    # the source.
+    hessian_evaluation::Ptr{Cvoid}
     start::Ptr{Cvoid}
     finish::Ptr{Cvoid}
     variable_name::Ptr{Cvoid}
@@ -235,6 +239,7 @@ mutable struct MCP_Interface
             _C_FUNCTION_EVALUATION,
             _C_JACOBIAN_EVALUATION,
             C_NULL,
+            C_NULL,  # See TODO note in definition of fields above.
             C_NULL,
             C_NULL,
             C_NULL,
@@ -399,6 +404,16 @@ function c_api_Path_Solve(m::MCP, info::Information)
     return @c_api(Path_Solve, Cint, (Ptr{Cvoid}, Ref{Information}), m.ptr, info)
 end
 
+function c_api_Path_Create(maxSize::Int, maxNNZ::Int)
+    @c_api(Path_Create, Cvoid, (Cint, Cint), maxSize, maxNNZ)
+    return
+end
+
+function c_api_Path_Destroy()
+    @c_api(Path_Destroy, Cvoid, ())
+    return
+end
+
 ###
 ### Standalone interface
 ###
@@ -482,6 +497,7 @@ function solve_mcp(
     status = c_api_Path_Solve(m, info)
 
     X = c_api_MCP_GetX(m)
+
     return MCP_Termination(status), X, info
 end
 
