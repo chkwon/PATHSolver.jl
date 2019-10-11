@@ -12,19 +12,21 @@ function download_path()
     platform_dependent_url = joinpath(base_url, platform_dependent_library)
     local_filename = joinpath(@__DIR__, platform_dependent_library)
     download(platform_dependent_url, local_filename)
-    return local_filename
+    ENV["PATH_JL_LOCATION"] = local_filename
+    return
 end
 
 function install_path()
+    if !haskey(ENV, "PATH_JL_LOCATION")
+        download_path()
+    end
     local_filename = get(ENV, "PATH_JL_LOCATION", nothing)
     if local_filename === nothing
-        @info "`PATH_JL_LOCATION` not detected. Attempting to download."
-        local_filename = download_path()
-    end
-    if Libdl.dlopen_e(local_filename) == C_NULL
+        error("Environment variable `PATH_JL_LOCATION` not found.")
+    elseif Libdl.dlopen_e(local_filename) == C_NULL
         error(
             "The environment variable `PATH_JL_LOCATION` does not point to a " *
-            "valid `libpath` library."
+            "valid `libpath` library. It points to $(local_filename)."
         )
     end
     @info "Installing PATH from $(local_filename)"
