@@ -23,7 +23,7 @@ function install_path()
     local_filename = get(ENV, "PATH_JL_LOCATION", nothing)
     if local_filename === nothing
         error("Environment variable `PATH_JL_LOCATION` not found.")
-    elseif Libdl.dlopen(local_filename, throw_error = false) === nothing
+    elseif Libdl.dlopen_e(local_filename) == C_NULL
         error(
             "The environment variable `PATH_JL_LOCATION` does not point to a " *
             "valid `libpath` library. It points to $(local_filename)."

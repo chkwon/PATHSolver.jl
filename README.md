@@ -2,6 +2,11 @@
 
 A Julia interface to the [PATH solver](http://pages.cs.wisc.edu/~ferris/path.html).
 
+[![][travis-img]][travis-url]
+
+[travis-img]: https://api.travis-ci.com/odow/PATH.jl.svg?branch=master
+[travis-url]: https://travis-ci.com/odow/PATH.jl
+
 ## Installation
 
 To install PATH, obtain a copy of PATH and set the `PATH_JL_LOCATION`
