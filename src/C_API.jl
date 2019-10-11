@@ -15,6 +15,15 @@ end
 const INFINITY = 1e20
 
 ###
+### License.h
+###
+
+function c_api_License_SetString(license::String)
+    ret = @c_api(License_SetString, Cint, (Ptr{Cchar},), license)
+    return ret
+end
+
+###
 ### Output_Interface.h
 ###
 
@@ -198,8 +207,11 @@ mutable struct MCP_Interface
     function_evaluation::Ptr{Cvoid}
     jacobian_evaluation::Ptr{Cvoid}
     # TODO(odow): the .h files I have don't include the hessian evaluation in
-    # MCP_Interface, but Standalone_Path.c includes it. Ask M. Ferris to look at
-    # the source.
+    #             MCP_Interface, but Standalone_Path.c includes it. Ask M.
+    #             Ferris to look at the source.
+    # Answer: there is an #ifdef to turn it on or off. In the GAMS builds it
+    #         appears to be on, but we should be careful when updating PATH
+    #         versions.
     hessian_evaluation::Ptr{Cvoid}
     start::Ptr{Cvoid}
     finish::Ptr{Cvoid}

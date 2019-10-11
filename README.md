@@ -2,6 +2,27 @@
 
 A Julia interface to the [PATH solver](http://pages.cs.wisc.edu/~ferris/path.html).
 
+## Installation
+
+To install PATH, obtain a copy of PATH and set the `PATH_JL_LOCATION`
+environment variable.
+
+## License
+
+Without a license, the PATH Solver can solve problem instances up to with up
+to 300 variables and 2000 non-zeros. For larger problems,
+[this web page](http://pages.cs.wisc.edu/~ferris/path/LICENSE) provides a
+temporary license that is valid for a year.
+
+You can either store the license in the `PATH_LICENSE_STRING` environment
+variable, or you can use the `PATH.c_api_License_SetString` function immediately
+after importing the `PATH` package:
+```julia
+using PATH
+PATH.c_api_License_SetString("<LICENSE STRING>")
+```
+where `<LICENSE STRING>` is replaced by the current license string.
+
 ## Example usage
 
 ```julia

@@ -1,23 +1,33 @@
+import Libdl
+
 function download_path()
-    @info "Beginning to build PATH"
-    base_url = "https://github.com/ampl/pathlib/raw/4.7.03/lib/"
-
-    platform_dependent_library = if Sys.iswindows()
-        Sys.ARCH == :x86_64 ? "win64/path47.dll" : "win32/path47.dll"
-    elseif Sys.islinux()
-        Sys.ARCH == :x86_64 ? "linux64/libpath47.so" : "linux32/libpath47.so"
+    base_url = ENV["SECRET_URL_PATH_BINARIES"]
+    platform_dependent_library = if Sys.islinux() &&  Sys.ARCH == :x86_64
+        "libpath50.so"
     elseif Sys.isapple()
-        "osx/libpath47.dylib"
+        "libpath50.dylib"
     else
-        error("Unsupported operating system. Only Windows, linux, and OSX are supported.")
+        error("Unsupported operating system. Only 64-bit linux and OSX are supported.")
     end
-
     platform_dependent_url = joinpath(base_url, platform_dependent_library)
-    local_filename = joinpath(@__DIR__, split(platform_dependent_library, "/")[2])
-
-    @info "Attempting to download: $(platform_dependent_url)"
+    local_filename = joinpath(@__DIR__, platform_dependent_library)
     download(platform_dependent_url, local_filename)
-    @info "Download successful. Writing deps.jl"
+    return local_filename
+end
+
+function install_path()
+    local_filename = get(ENV, "PATH_JL_LOCATION", nothing)
+    if local_filename === nothing
+        @info "`PATH_JL_LOCATION` not detected. Attempting to download."
+        local_filename = download_path()
+    end
+    if Libdl.dlopen_e(local_filename) == C_NULL
+        error(
+            "The environment variable `PATH_JL_LOCATION` does not point to a " *
+            "valid `libpath` library."
+        )
+    end
+    @info "Installing PATH from $(local_filename)"
     open("deps.jl", "w") do io
         write(io, """
         const PATH_SOLVER = "$(escape_string(local_filename))"
@@ -25,4 +35,4 @@ function download_path()
     end
 end
 
-download_path()
+install_path()
