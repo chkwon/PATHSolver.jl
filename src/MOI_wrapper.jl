@@ -34,30 +34,39 @@ struct Solution
 end
 
 solution(model::Optimizer) = get(model.ext, :solution, nothing)::Union{Nothing, Solution}
-kwargs(model::Optimizer) = get(model.ext, :kwargs, nothing)
 
 """
-    Optimizer(; kwargs...)
+    Optimizer()
 
-Define a new PATH optimizer, passing options as keyword arguments.
+Define a new PATH optimizer.
 
-Common options include:
+Pass options using `MOI.RawParameter`. Common options include:
 
- - output="yes"
- - convergence_tolerance=1e-6
- - time_limit=3600
+ - output => "yes"
+ - convergence_tolerance => 1e-6
+ - time_limit => 3600
 
 A full list of options can be found at http://pages.cs.wisc.edu/~ferris/path/options.pdf.
 
 ### Example
 
-    PATH.Optimizer(output = "no")
+    optimizer = PATH.Optimizer()
+    MOI.set(optimizer, MOI.RawParameter("output"), "no")
 """
-function Optimizer(; kwargs...)
+function Optimizer()
     model = Optimizer{Float64}()
-    model.ext[:kwargs] = kwargs
+    model.ext[:kwargs] = Dict{Symbol, Any}()
     model.ext[:solution] = nothing
     return model
+end
+
+function MOI.set(model::Optimizer, p::MOI.RawParameter, v)
+    model.ext[:kwargs][Symbol(p.name)] = v
+    return
+end
+
+function MOI.get(model::Optimizer, p::MOI.RawParameter)
+    return get(model.ext[:kwargs], Symbol(p.name), nothing)
 end
 
 MOI.get(model::Optimizer, ::MOI.SolverName) = c_api_Path_Version()
@@ -186,7 +195,12 @@ function MOI.optimize!(model::Optimizer)
     lower, upper, initial = _bounds_and_starting(model)
     M, q = _F_linear_operator(model)
     status, x, info = solve_mcp(
-        M, q, lower, upper, initial; model.ext[:kwargs]...
+        M,
+        q,
+        lower,
+        upper,
+        initial;
+        [k => v for (k, v) in model.ext[:kwargs]]...
     )
     model.ext[:solution] = Solution(status, x, info)
     return

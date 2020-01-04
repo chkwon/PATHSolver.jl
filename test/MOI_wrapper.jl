@@ -8,8 +8,16 @@ const MOI = MathOptInterface
     @test MOI.get(model, MOI.SolverName()) == PATH.c_api_Path_Version()
 end
 
+@testset "RawParameter" begin
+    model = PATH.Optimizer()
+    @test MOI.get(model, MOI.RawParameter("output")) === nothing
+    MOI.set(model, MOI.RawParameter("output"), "no")
+    @test MOI.get(model, MOI.RawParameter("output")) == "no"
+end
+
 @testset "Example 1" begin
     model = PATH.Optimizer()
+    MOI.set(model, MOI.RawParameter("time_limit"), 60)
     x = MOI.add_variables(model, 4)
     MOI.add_constraint.(model, MOI.SingleVariable.(x), MOI.Interval(0.0, 10.0))
     MOI.set.(model, MOI.VariablePrimalStart(), x, 0.0)
