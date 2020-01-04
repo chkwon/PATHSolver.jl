@@ -52,13 +52,15 @@ julia> q = [2, 2, -2, -6]
  -2
  -6
 
-julia> model = Model(with_optimizer(PATH.Optimizer, output = "no"))
+julia> model = Model(PATH.Optimizer)
 A JuMP Model
 Feasibility problem with:
 Variables: 0
 Model mode: AUTOMATIC
 CachingOptimizer state: EMPTY_OPTIMIZER
 Solver name: Path 5.0.00
+
+julia> MOI.set(model, MOI.RawParameter("output"), "no")
 
 julia> @variable(model, x[1:4] >= 0)
 4-element Array{VariableRef,1}:
@@ -67,8 +69,8 @@ julia> @variable(model, x[1:4] >= 0)
  x[3]
  x[4]
 
-julia> @constraint(model, [M * x .+ q; x] in PATH.Complements(4))
-[-x[3] - x[4] + 2, x[3] - 2 x[4] + 2, x[1] - x[2] + 2 x[3] - 2 x[4] - 2, x[1] + 2 x[2] - 2 x[3] + 4 x[4] - 6, x[1], x[2], x[3], x[4]] ∈ PATH.Complements(4)
+julia> @constraint(model, M * x .+ q ⟂ x)
+[-x[3] - x[4] + 2, x[3] - 2 x[4] + 2, x[1] - x[2] + 2 x[3] - 2 x[4] - 2, x[1] + 2 x[2] - 2 x[3] + 4 x[4] - 6, x[1], x[2], x[3], x[4]] ∈ MOI.Complements(4)
 
 julia> optimize!(model)
 Reading options file /var/folders/bg/dzq_hhvx1dxgy6gb5510pxj80000gn/T/tmpiSsCRO

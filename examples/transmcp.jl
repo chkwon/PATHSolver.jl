@@ -14,7 +14,9 @@
 # Dantzig, G B, Chapter 3.3. In Linear Programming and Extensions.
 # Princeton University Press, Princeton, New Jersey, 1963.
 
-using JuMP, PATH, Test
+using JuMP
+using PATH
+using Test
 
 capacity = Dict(
     "seattle"   => 350,
@@ -54,9 +56,9 @@ end)
 end)
 
 @constraints(model, begin
-    vec([profit x]) in PATH.Complements(length(x))
-    vec([supply w]) in PATH.Complements(length(w))
-    vec([fxdemand p]) in PATH.Complements(length(p))
+    profit ⟂ x
+    supply ⟂ w
+    fxdemand ⟂ p
 end)
 
 optimize!(model)
