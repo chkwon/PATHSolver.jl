@@ -15,6 +15,15 @@ end
     @test MOI.get(model, MOI.RawParameter("output")) == "no"
 end
 
+@testset "Infeasible" begin
+    model = PATH.Optimizer()
+    x = MOI.add_variable(model)
+    MOI.add_constraint(model, MOI.SingleVariable(x), MOI.Interval(0.0, -1.0))
+    MOI.optimize!(model)
+    @test MOI.get(model, MOI.TerminationStatus()) == MOI.INVALID_MODEL
+    @test MOI.get(model, MOI.RawStatusString()) == "Problem has a bound error"
+end
+
 @testset "Example 1" begin
     model = PATH.Optimizer()
     MOI.set(model, MOI.RawParameter("time_limit"), 60)
@@ -46,8 +55,12 @@ end
         )
     end
     @test MOI.get(model, MOI.TerminationStatus()) == MOI.OPTIMIZE_NOT_CALLED
+    @test MOI.get(model, MOI.PrimalStatus()) == MOI.NO_SOLUTION
+    @test MOI.get(model, MOI.RawStatusString()) == "MOI.optimize! was not called yet"
     MOI.optimize!(model)
     @test MOI.get(model, MOI.TerminationStatus()) == MOI.LOCALLY_SOLVED
+    @test MOI.get(model, MOI.PrimalStatus()) == MOI.FEASIBLE_POINT
+    @test MOI.get(model, MOI.RawStatusString()) == "The problem was solved"
     x_val = MOI.get.(model, MOI.VariablePrimal(), x)
     @test isapprox(x_val, [2.8, 0.0, 0.8, 1.2])
 end

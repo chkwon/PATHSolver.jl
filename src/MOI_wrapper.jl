@@ -214,7 +214,7 @@ const _MCP_TERMINATION_STATUS_MAP =
         MCP_MinorIterationLimit => (MOI.ITERATION_LIMIT, "Cumulative minor iterlim met"),
         MCP_TimeLimit => (MOI.TIME_LIMIT, "Ran out of time"),
         MCP_UserInterrupt => (MOI.INTERRUPTED, "Control-C, typically"),
-        MCP_BoundError => (MOI.OTHER_ERROR, "Problem has a bound error"),
+        MCP_BoundError => (MOI.INVALID_MODEL, "Problem has a bound error"),
         MCP_DomainError => (MOI.NUMERICAL_ERROR, "Could not find a starting point"),
         MCP_Infeasible => (MOI.INFEASIBLE, "Problem has no solution"),
         MCP_Error => (MOI.OTHER_ERROR, "An error occured within the code"),
@@ -246,9 +246,6 @@ function MOI.get(
     model::Optimizer, attr::MOI.VariablePrimal, x::MOI.VariableIndex
 )
     MOI.check_result_index_bounds(model, attr)
-    if solution(model) === nothing
-        error("Unable to query VariablePrimal: OPTIMIZE_NOT_CALLED.")
-    end
     return solution(model).x[x.value]
 end
 
