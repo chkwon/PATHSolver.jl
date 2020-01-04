@@ -14,18 +14,15 @@ MOI.Utilities.@model(
 
 function MOI.supports_constraint(
     ::Optimizer, ::Type{MOI.SingleVariable}, ::Type{S}
-) where {S <: MOI.AbstractScalarFunction}
+) where {S <: Union{MOI.Semiinteger, MOI.Semicontinuous, MOI.ZeroOne, MOI.Integer}}
     return false
 end
 
-function MOI.supports_constraint(
-    ::Optimizer, ::Type{MOI.SingleVariable}, ::Type{S}
-) where {S <: MOI.Interval}
-    return true
+function MOI.supports(
+    ::Optimizer, ::MOI.ObjectiveFunction{F}
+) where {F<:Union{MOI.SingleVariable, MOI.ScalarAffineFunction, MOI.ScalarQuadraticFunction}}
+    return false
 end
-
-MOI.supports(::Optimizer, ::MOI.ObjectiveSense) = false
-MOI.supports(::Optimizer, ::MOI.ObjectiveFunction) = false
 
 struct Solution
     status::MCP_Termination

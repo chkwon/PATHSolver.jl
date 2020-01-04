@@ -15,17 +15,24 @@ end
     @test MOI.get(model, MOI.RawParameter("output")) == "no"
 end
 
-@testset "Infeasible" begin
-    model = PATH.Optimizer()
-    x = MOI.add_variable(model)
-    MOI.add_constraint(model, MOI.SingleVariable(x), MOI.Interval(0.0, -1.0))
-    MOI.optimize!(model)
-    @test MOI.get(model, MOI.TerminationStatus()) == MOI.INVALID_MODEL
-    @test MOI.get(model, MOI.RawStatusString()) == "Problem has a bound error"
-    @test MOI.get(model, MOI.PrimalStatus()) == MOI.UNKNOWN_RESULT_STATUS
-end
-
 @testset "Invalid models" begin
+    @testset "Infeasible" begin
+        model = PATH.Optimizer()
+        x = MOI.add_variable(model)
+        MOI.add_constraint(model, MOI.SingleVariable(x), MOI.Interval(0.0, -1.0))
+        MOI.optimize!(model)
+        @test MOI.get(model, MOI.TerminationStatus()) == MOI.INVALID_MODEL
+        @test MOI.get(model, MOI.RawStatusString()) == "Problem has a bound error"
+        @test MOI.get(model, MOI.PrimalStatus()) == MOI.UNKNOWN_RESULT_STATUS
+    end
+    @testset "Binary" begin
+        model = PATH.Optimizer()
+        x = MOI.add_variable(model)
+        @test_throws(
+            MOI.UnsupportedConstraint,
+            MOI.add_constraint(model, MOI.SingleVariable(x), MOI.ZeroOne())
+        )
+    end
     @testset "wrong dimension" begin
         model = PATH.Optimizer()
         x = MOI.add_variable(model)
