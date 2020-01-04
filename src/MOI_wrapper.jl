@@ -112,16 +112,15 @@ function _F_linear_operator(model::Optimizer)
         Si = MOI.get(model, MOI.ConstraintSet(), index)
 
         if 2 * Si.dimension != length(Fi.constants)
-            error("""
-            Dimension of constant vector $(length(Fi.constants)) does not match
-            the required dimension of the complementarity set $(2 * Si.dimension).
-            """)
+            error(
+                "Dimension of constant vector $(length(Fi.constants)) does not match the " *
+                "required dimension of the complementarity set $(2 * Si.dimension)."
+            )
         elseif any(i -> !iszero(Fi.constants[Si.dimension + i]), 1:Si.dimension)
-            error("""
-            VectorAffineFunction malformed: a constant associated with the
-            complemented variable is not zero:
-            $(Fi.constants[Si.dimension+1:end]).
-            """)
+            error(
+                "VectorAffineFunction malformed: a constant associated with a " *
+                "complemented variable is not zero: $(Fi.constants[Si.dimension+1:end])."
+            )
         end
 
         # First pass: get rows vector and check for invalid functions.
@@ -131,24 +130,24 @@ function _F_linear_operator(model::Optimizer)
                 # No-op: leave for second pass.
                 continue
             elseif term.output_index > 2 * Si.dimension
-                error("""
-                VectorAffineFunction malformed: output_index $(term.output_index)
-                is too large.
-                """)
+                error(
+                    "VectorAffineFunction malformed: output_index $(term.output_index) " *
+                    "is too large."
+                )
             end
             dimension_i = term.output_index - Si.dimension
             row_i = term.scalar_term.variable_index.value
             if rows[dimension_i] != 0 || has_term[row_i]
-                error("""
-                The variable $(term.scalar_term.variable_index) appears in more
-                than one complementarity constraint.
-                """)
+                error(
+                    "The variable $(term.scalar_term.variable_index) appears in more " *
+                    "than one complementarity constraint."
+                )
             elseif term.scalar_term.coefficient != 1.0
-                error("""
-                VectorAffineFunction malformed: variable $(term.scalar_term.variable_index)
-                has a coefficient that is not 1 in row $(term.output_index) of
-                the VectorAffineFunction.
-                """)
+                error(
+                    "VectorAffineFunction malformed: variable " *
+                    "$(term.scalar_term.variable_index) has a coefficient that is not 1 " *
+                    "in row $(term.output_index) of the VectorAffineFunction."
+                )
             end
             rows[dimension_i] = row_i
             has_term[row_i] = true
@@ -163,10 +162,10 @@ function _F_linear_operator(model::Optimizer)
             end
             row_i = rows[term.output_index]
             if iszero(row_i)
-                error("""
-                VectorAffineFunction malformed: expected variable in row
-                $(term.output_index).
-                """)
+                error(
+                    "VectorAffineFunction malformed: expected variable in row " *
+                    "$(Si.dimension + term.output_index)."
+                )
             end
             M[row_i, s_term.variable_index.value] += s_term.coefficient
         end
