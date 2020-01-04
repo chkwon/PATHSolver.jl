@@ -34,7 +34,7 @@ end
         MOI.add_constraint(
             model,
             MOI.VectorAffineFunction(terms, [q[i], 0.0]),
-            PATH.Complements(1)
+            MOI.Complements(1)
         )
     end
     @test MOI.get(model, MOI.TerminationStatus()) == MOI.OPTIMIZE_NOT_CALLED

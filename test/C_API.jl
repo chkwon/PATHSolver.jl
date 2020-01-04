@@ -1,4 +1,6 @@
-using PATH, Test, SparseArrays
+using PATH
+using SparseArrays
+using Test
 
 @testset "CheckLicense" begin
     @test PATH.c_api_Path_CheckLicense(1, 1) > 0

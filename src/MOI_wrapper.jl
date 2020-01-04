@@ -1,46 +1,10 @@
 const MOI = MathOptInterface
 
-"""
-    Complements(dimension::Int)
-
-The set corresponding to a mixed complementarity constraint.
-
-Complementarity constraints should be specified with an
-[`AbstractVectorFunction`](@ref)-in-`Complements(dimension)` constraint.
-
-If `F` function, then the dimension of `F` must be `2 * dimension`. This defines
-a complementarity constraint between `F[i]` and `F[i + dimension]`. Thus,
-`F[i + dimension]` must be interpretable as a single variable (e.g., `1.0 * x +
-0.0`).
-
-If a variable `x_i` is constrained in `Interval(lb, ub)`, then mathematically,
-the mixed complementarity problem is to find a solution such that at least one
-of the following holds:
-
-  1.  F_i(x) = 0, lb <= x_i <= ub_i
-  2.  F_i(x) > 0, lb == x_i
-  3.  F_i(x) < 0,       x_i == ub_i
-
-Classically, the bounding set for `x_i` is `Interval(0, Inf)`, which recovers:
-0 <= F_i(x) ⟂ x >= 0, where the `⟂` operator implies F_i(x) * x = 0.
-
-### Examples
-
-    [x, y] -in- Complements(1)
-    [x, y, u, w] -in- Complements(2)
-    [2 * x - 3, x] -in- Complements(1)
-"""
-struct Complements <: MOI.AbstractVectorSet
-    dimension::Int
-end
-
-MOI.copy(c::Complements) = Complements(c.dimension)
-
 MOI.Utilities.@model(
     Optimizer,
     (),  # Scalar sets
     (),  # Typed scalar sets
-    (Complements,),  # Vector sets
+    (MOI.Complements,),  # Vector sets
     (),  # Typed vector sets
     (),  # Scalar functions
     (),  # Typed scalar functions
@@ -132,7 +96,7 @@ function _F_linear_operator(model::Optimizer)
     for index in MOI.get(
         model,
         MOI.ListOfConstraintIndices{
-            MOI.VectorAffineFunction{Float64}, Complements
+            MOI.VectorAffineFunction{Float64}, MOI.Complements
         }()
     )
         Fi = MOI.get(model, MOI.ConstraintFunction(), index)
