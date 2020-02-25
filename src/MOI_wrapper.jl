@@ -10,6 +10,7 @@ MOI.Utilities.@model(
     (),  # Typed scalar functions
     (),  # Vector functions
     (MOI.VectorAffineFunction,),  # Typed vector functions
+    true,  # is_optimizer
 )
 
 function MOI.supports_constraint(

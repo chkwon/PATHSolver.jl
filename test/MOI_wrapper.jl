@@ -8,6 +8,10 @@ const MOI = MathOptInterface
     @test MOI.get(model, MOI.SolverName()) == PATH.c_api_Path_Version()
 end
 
+@testset "MOI.AbstractOptimizer" begin
+    @test PATH.Optimizer() isa MOI.AbstractOptimizer
+end
+
 @testset "RawParameter" begin
     model = PATH.Optimizer()
     @test MOI.get(model, MOI.RawParameter("output")) === nothing
