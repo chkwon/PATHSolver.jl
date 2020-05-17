@@ -2,9 +2,10 @@ language: julia
 codecov: true
 os:
   - linux
+  - osx
 julia:
   - 1.0
-  - 1.2
+  - 1.4
 notifications:
   email: false
 branches:

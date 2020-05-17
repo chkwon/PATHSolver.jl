@@ -10,21 +10,20 @@ function download_path()
         )
     end
     base_url = ENV["SECRET_URL_PATH_BINARIES"]
-    platform_dependent_library = if Sys.islinux() &&  Sys.ARCH == :x86_64
-        "libpath50.so"
+    libpath, libgfortran = if Sys.islinux() &&  Sys.ARCH == :x86_64
+        "libpath50.so", "libgfortran.so.4.0.0"
     elseif Sys.isapple()
-        "libpath50.dylib"
+        "libpath50.dylib", "libgfortran.4.dylib"
     elseif Sys.iswindows()
-        "libpath50.dll"
+        "libpath50.dll", "libgfortran-4.dll"
     else
         error(
             "Unsupported operating system. Only 64-bit linux, OSX, and Windows are supported."
         )
     end
-    platform_dependent_url = joinpath(base_url, platform_dependent_library)
-    local_filename = joinpath(@__DIR__, platform_dependent_library)
-    download(platform_dependent_url, local_filename)
-    ENV["PATH_JL_LOCATION"] = local_filename
+    ENV["PATH_JL_LOCATION"] = joinpath(@__DIR__, libpath)
+    download(joinpath(base_url, libpath), ENV["PATH_JL_LOCATION"])
+    download(joinpath(base_url, libgfortran), joinpath(@__DIR__, libgfortran))
     return
 end
 
@@ -36,10 +35,7 @@ function install_path()
     if local_filename === nothing
         error("Environment variable `PATH_JL_LOCATION` not found.")
     elseif Libdl.dlopen_e(local_filename) == C_NULL
-        error(
-            "The environment variable `PATH_JL_LOCATION` does not point to a " *
-            "valid `libpath` library. It points to $(local_filename)."
-        )
+        error("Unable to open the path library $(local_filename).")
     end
     open("deps.jl", "w") do io
         write(io, "const PATH_SOLVER = \"$(escape_string(local_filename))\"")
