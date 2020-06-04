@@ -12,6 +12,10 @@ A Julia interface to the [PATH solver](http://pages.cs.wisc.edu/~ferris/path.htm
 To install PATH, obtain a copy of PATH and set the `PATH_JL_LOCATION`
 environment variable.
 
+- One way to obtain a copy of PATH is to install GAMS: https://www.gams.com
+- You want to set `PATH_JL_LOCATION` to the directory containing the `libpath50.xx` library
+- Known issues: https://github.com/odow/PATH.jl/issues/1
+
 ## License
 
 Without a license, the PATH Solver can solve problem instances up to with up
