@@ -53,6 +53,7 @@ A full list of options can be found at http://pages.cs.wisc.edu/~ferris/path/opt
 """
 function Optimizer()
     model = Optimizer{Float64}()
+    model.ext[:silent] = false
     model.ext[:kwargs] = Dict{Symbol, Any}()
     model.ext[:solution] = nothing
     return model
@@ -65,6 +66,15 @@ end
 
 function MOI.get(model::Optimizer, p::MOI.RawParameter)
     return get(model.ext[:kwargs], Symbol(p.name), nothing)
+end
+
+MOI.supports(model::Optimizer, ::MOI.Silent) = true
+
+MOI.get(model::Optimizer, ::MOI.Silent) = model.ext[:silent]
+
+function MOI.set(model::Optimizer, ::MOI.Silent, x::Bool)
+    model.ext[:silent] = x
+    return
 end
 
 MOI.get(model::Optimizer, ::MOI.SolverName) = c_api_Path_Version()
@@ -197,6 +207,7 @@ function MOI.optimize!(model::Optimizer)
         lower,
         upper,
         initial;
+        silent = model.ext[:silent],
         [k => v for (k, v) in model.ext[:kwargs]]...
     )
     model.ext[:solution] = Solution(status, x, info)

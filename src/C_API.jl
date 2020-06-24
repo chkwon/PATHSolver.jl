@@ -438,6 +438,7 @@ end
         ub::Vector{Cdouble},
         z::Vector{Cdouble};
         nnz::Int = length(lb)^2,
+        silent::Bool = false,
         kwargs...
     )
 
@@ -463,11 +464,13 @@ function solve_mcp(
     ub::Vector{Cdouble},
     z::Vector{Cdouble};
     nnz::Int = length(lb)^2,
+    silent::Bool = false,
     kwargs...
 )
     @assert length(z) == length(lb) == length(ub)
 
-    c_api_Output_SetInterface(OutputInterface(stdout))
+    out_io = silent ? IOBuffer() : stdout
+    c_api_Output_SetInterface(OutputInterface(out_io))
 
     n = length(z)
     if n == 0
@@ -583,6 +586,7 @@ function solve_mcp(
     lb::Vector{Cdouble},
     ub::Vector{Cdouble},
     z::Vector{Cdouble};
+    silent::Bool = false,
     kwargs...
 )
     return solve_mcp(
@@ -592,6 +596,7 @@ function solve_mcp(
         ub,
         z;
         nnz = SparseArrays.nnz(M),
+        silent = silent,
         kwargs...
     )
 end
