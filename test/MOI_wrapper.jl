@@ -165,6 +165,10 @@ end
 @testset "Example 1" begin
     model = PATH.Optimizer()
     MOI.set(model, MOI.RawParameter("time_limit"), 60)
+    @test MOI.supports(model, MOI.Silent()) == true
+    @test MOI.get(model, MOI.Silent()) == false
+    MOI.set(model, MOI.Silent(), true)
+    @test MOI.get(model, MOI.Silent()) == true
     x = MOI.add_variables(model, 4)
     @test MOI.get(model, MOI.VariablePrimalStart(), x[1]) === nothing
     MOI.add_constraint.(model, MOI.SingleVariable.(x), MOI.Interval(0.0, 10.0))
