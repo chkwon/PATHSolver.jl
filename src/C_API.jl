@@ -1,16 +1,3 @@
-"""
-    @c_api(f, return_type, arg_types, args...)
-
-A `ccall` wrapper for PATH functions.
-"""
-macro c_api(f, args...)
-    f = "$(f)"
-    args = esc.(args)
-    return quote
-        ccall(($f, $PATH_SOLVER), $(args...))
-    end
-end
-
 # PATH uses the Float64 value 1e20 to represent +infinity.
 const INFINITY = 1e20
 
@@ -19,22 +6,16 @@ const INFINITY = 1e20
 ###
 
 function c_api_License_SetString(license::String)
-    ret = @c_api(License_SetString, Cint, (Ptr{Cchar},), license)
-    return ret
+    return ccall((:License_SetString, PATH_SOLVER), Cint, (Ptr{Cchar},), license)
 end
 
 ###
 ### Output_Interface.h
 ###
 
-const c_api_Output_Log     = 1 << 0
-const c_api_Output_Status  = 1 << 1
-const c_api_Output_Listing = 1 << 2
-
-function c_api_Output_Default()
-    @c_api(Output_Default, Cvoid, ())
-    return
-end
+const c_api_Output_Log     = Cint(1 << 0)
+const c_api_Output_Status  = Cint(1 << 1)
+const c_api_Output_Listing = Cint(1 << 2)
 
 mutable struct OutputInterface
     output_data::Ptr{Cvoid}
@@ -49,9 +30,13 @@ function _c_flush(data::Ptr{Cvoid}, mode::Cint)
 end
 
 function _c_print(data::Ptr{Cvoid}, mode::Cint, msg::Ptr{Cchar})
-    if mode in [1, 3, 5, 7]
-        # These modes are for the Output_Log.
-        # TODO(odow): print lines for the Output_Status and Output_Listing.
+    if (
+        mode & c_api_Output_Log == c_api_Output_Log ||
+        # TODO(odow): decide whether to print the Output_Status. It has a lot of
+        # information...
+        # mode & c_api_Output_Status == c_api_Output_Status ||
+        mode & c_api_Output_Listing == c_api_Output_Listing
+    )
         io = unsafe_pointer_to_objref(data)::IO
         print(io, unsafe_string(msg))
     end
@@ -65,8 +50,9 @@ function OutputInterface(io)
 end
 
 function c_api_Output_SetInterface(o::OutputInterface)
-    PATH.@c_api(Output_SetInterface, Cvoid, (Ref{OutputInterface},), o)
-    return
+    return ccall(
+        (:Output_SetInterface, PATH_SOLVER), Cvoid, (Ref{OutputInterface},), o
+    )
 end
 
 ###
@@ -82,34 +68,35 @@ mutable struct Options
     end
 end
 
+Base.cconvert(::Type{Ptr{Cvoid}}, x::Options) = x
+Base.unsafe_convert(::Type{Ptr{Cvoid}}, x::Options) = x.ptr
+
+
 function c_api_Options_Create()
-    ptr = @c_api(Options_Create, Ptr{Cvoid}, ())
+    ptr = ccall((:Options_Create, PATH_SOLVER), Ptr{Cvoid}, ())
     return Options(ptr)
 end
 
 function c_api_Options_Destroy(o::Options)
-    @c_api(Options_Destroy, Cvoid, (Ptr{Cvoid},), o.ptr)
-    return
+    return ccall((:Options_Destroy, PATH_SOLVER), Cvoid, (Ptr{Cvoid},), o)
 end
 
 function c_api_Options_Default(o::Options)
-    @c_api(Options_Default, Cvoid, (Ptr{Cvoid},), o.ptr)
-    return
+    return ccall((:Options_Default, PATH_SOLVER), Cvoid, (Ptr{Cvoid},), o)
 end
 
 function c_api_Options_Display(o::Options)
-    @c_api(Options_Display, Cvoid, (Ptr{Cvoid},), o.ptr)
-    return
+    return ccall((:Options_Display, PATH_SOLVER), Cvoid, (Ptr{Cvoid},), o)
 end
 
 function c_api_Options_Read(o::Options, filename::String)
-    @c_api(Options_Read, Cvoid, (Ptr{Cvoid}, Ptr{Cchar}), o.ptr, filename)
-    return
+    return ccall(
+        (:Options_Read, PATH_SOLVER), Cvoid, (Ptr{Cvoid}, Ptr{Cchar}), o, filename
+    )
 end
 
 function c_api_Path_AddOptions(o::Options)
-    @c_api(Path_AddOptions, Cvoid, (Ptr{Cvoid},), o.ptr)
-    return
+    return ccall((:Path_AddOptions, PATH_SOLVER), Cvoid, (Ptr{Cvoid},), o)
 end
 
 ###
@@ -271,28 +258,34 @@ mutable struct MCP
     end
 end
 
+Base.cconvert(::Type{Ptr{Cvoid}}, x::MCP) = x
+Base.unsafe_convert(::Type{Ptr{Cvoid}}, x::MCP) = x.ptr
+
 function c_api_MCP_Create(n::Int, nnz::Int)
-    ptr = @c_api(MCP_Create, Ptr{Cvoid}, (Cint, Cint), n, nnz)
+    ptr = ccall((:MCP_Create, PATH_SOLVER), Ptr{Cvoid}, (Cint, Cint), n, nnz)
     return MCP(n, ptr)
 end
 
 function c_api_MCP_Destroy(m::MCP)
-    @c_api(MCP_Destroy, Cvoid, (Ptr{Cvoid},), m.ptr)
+    if m.ptr === C_NULL
+        return
+    end
+    ccall((:MCP_Destroy, PATH_SOLVER), Cvoid, (Ptr{Cvoid},), m)
     return
 end
 
 function c_api_MCP_SetInterface(m::MCP, interface::MCP_Interface)
-    @c_api(
-        MCP_SetInterface,
+    ccall(
+        (:MCP_SetInterface, PATH_SOLVER),
         Cvoid,
         (Ptr{Cvoid}, Ref{MCP_Interface}),
-        m.ptr, interface
+        m, interface
     )
     return
 end
 
 function c_api_MCP_GetX(m::MCP)
-    ptr = @c_api(MCP_GetX, Ptr{Cdouble}, (Ptr{Cvoid},), m.ptr)
+    ptr = ccall((:MCP_GetX, PATH_SOLVER), Ptr{Cdouble}, (Ptr{Cvoid},), m)
     return copy(unsafe_wrap(Array{Cdouble}, ptr, m.n))
 end
 
@@ -394,7 +387,7 @@ Check that the current license (stored in the environment variable
 Returns a nonzero value on successful completion, and a zero value on failure.
 """
 function c_api_Path_CheckLicense(n::Int, nnz::Int)
-    return @c_api(Path_CheckLicense, Cint, (Cint, Cint), n, nnz)
+    return ccall((:Path_CheckLicense, PATH_SOLVER), Cint, (Cint, Cint), n, nnz)
 end
 
 """
@@ -403,7 +396,7 @@ end
 Return a string of the PATH version.
 """
 function c_api_Path_Version()
-    ptr = @c_api(Path_Version, Ptr{Cchar}, ())
+    ptr = ccall((:Path_Version, PATH_SOLVER), Ptr{Cchar}, ())
     return unsafe_string(ptr)
 end
 
@@ -413,17 +406,9 @@ end
 Returns a MCP_Termination status.
 """
 function c_api_Path_Solve(m::MCP, info::Information)
-    return @c_api(Path_Solve, Cint, (Ptr{Cvoid}, Ref{Information}), m.ptr, info)
-end
-
-function c_api_Path_Create(maxSize::Int, maxNNZ::Int)
-    @c_api(Path_Create, Cvoid, (Cint, Cint), maxSize, maxNNZ)
-    return
-end
-
-function c_api_Path_Destroy()
-    @c_api(Path_Destroy, Cvoid, ())
-    return
+    return ccall(
+        (:Path_Solve, PATH_SOLVER), Cint, (Ptr{Cvoid}, Ref{Information}), m, info
+    )
 end
 
 ###
@@ -487,14 +472,10 @@ function solve_mcp(
     o = c_api_Options_Create()
     c_api_Path_AddOptions(o)
     c_api_Options_Default(o)
-
     m = c_api_MCP_Create(n, nnz)
-
     m.id_data = InterfaceData(Cint(n), Cint(nnz), F, J, lb, ub, z)
-
     m_interface = MCP_Interface(m.id_data)
     c_api_MCP_SetInterface(m, m_interface)
-
     if length(kwargs) > 0
         mktemp() do path, io
             println(io, "* Automatically generated by PATH.jl. Do not edit.")
@@ -506,13 +487,15 @@ function solve_mcp(
         end
     end
     c_api_Options_Display(o)
-
     info = Information(use_start = true)
-
     status = c_api_Path_Solve(m, info)
-
     X = c_api_MCP_GetX(m)
-
+    # TODO(odow): I don't know why, but manually calling MCP_Destroy was
+    # necessary to avoid a segfault on Julia 1.0 when using LUSOL. I guess it's
+    # something to do with the timing of when things need to get freed on the
+    # PATH side? i.e., MCP_Destroy before other things?
+    c_api_MCP_Destroy(m)
+    m.ptr = C_NULL
     return MCP_Termination(status), X, info
 end
 

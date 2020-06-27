@@ -3,6 +3,7 @@ using SparseArrays
 using Test
 
 @testset "CheckLicense" begin
+    @test PATH.c_api_License_SetString("bad_license") != 0
     @test PATH.c_api_Path_CheckLicense(1, 1) > 0
 end
 
@@ -27,7 +28,32 @@ end
         fill(0.0, 4),
         fill(10.0, 4),
         [0.0, 0.0, 0.0, 0.0];
-        output = "no"
+        output = "no",
+    )
+    @test status == PATH.MCP_Solved
+    @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
+end
+
+@testset "Example LUSOL" begin
+    M = convert(
+        SparseArrays.SparseMatrixCSC{Cdouble, Cint},
+        SparseArrays.sparse([
+            0  0 -1 -1;
+            0  0  1 -2;
+            1 -1  2 -2;
+            1  2 -2  4
+        ])
+    )
+    status, z, info = PATH.solve_mcp(
+        M,
+        Float64[2, 2, -2, -6],
+        fill(0.0, 4),
+        fill(10.0, 4),
+        [0.0, 0.0, 0.0, 0.0];
+        output = "yes",
+        # TODO(odow): when enabled, I get segfaults :(
+        factorization_method = "blu_lusol",
+        factorization_library_name = PATH.LUSOL_LIBRARY_PATH,
     )
     @test status == PATH.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])

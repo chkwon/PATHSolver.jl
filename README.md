@@ -9,18 +9,18 @@ A Julia interface to the [PATH solver](http://pages.cs.wisc.edu/~ferris/path.htm
 
 ## Installation
 
-To install PATH, obtain a copy of PATH and set the `PATH_JL_LOCATION`
-environment variable.
-
-- One way to obtain a copy of PATH is to install GAMS: https://www.gams.com
-- You want to set `PATH_JL_LOCATION` to the directory containing the `libpath50.xx` library
-- Known issues: https://github.com/odow/PATH.jl/issues/1
+`PATH.jl` is not registered yet, so you will need to add it like so:
+```julia
+] add https://github.com/odow/PATH.jl
+```
+By default, `PATH.jl` will download a copy of the underlying PATH solver. To use
+a different version of PATH, see the Manual Installation section below.
 
 ## License
 
 Without a license, the PATH Solver can solve problem instances up to with up
 to 300 variables and 2000 non-zeros. For larger problems,
-[this web page](http://pages.cs.wisc.edu/~ferris/path/LICENSE) provides a
+[this web page](http://pages.cs.wisc.edu/~ferris/path/julia/LICENSE) provides a
 temporary license that is valid for a year.
 
 You can either store the license in the `PATH_LICENSE_STRING` environment
@@ -64,7 +64,7 @@ Model mode: AUTOMATIC
 CachingOptimizer state: EMPTY_OPTIMIZER
 Solver name: Path 5.0.00
 
-julia> MOI.set(model, MOI.RawParameter("output"), "no")
+julia> set_optimizer_attribute(model, "output", "no")
 
 julia> @variable(model, x[1:4] >= 0)
 4-element Array{VariableRef,1}:
@@ -93,3 +93,23 @@ julia> value.(x)
 julia> termination_status(model)
 LOCALLY_SOLVED::TerminationStatusCode = 4
 ```
+
+## Factorization methods
+
+By default, `PATH.jl` will download the [LUSOL](https://web.stanford.edu/group/SOL/software/lusol/)
+shared library. To use LUSOL, set the following options:
+```julia
+model = Model(PATH.Optimizer)
+set_optimizer_attribute(model, "factorization_method", "blu_lusol")
+set_optimizer_attribute(model, "factorization_library_name", PATH.LUSOL_LIBRARY_PATH)
+```
+
+To use `factorization_method umfpack` you will need the umfpack shared lib that
+is available directly from the [developers of that code for academic use](http://faculty.cse.tamu.edu/davis/suitesparse.html).
+
+## Manual installation
+
+By default `PATH.jl` will download a copy of the `libpath` library. If you
+already have one installed and want to use that, set the `PATH_JL_LOCATION`
+environment variable to point to the `libpath50.xx` library, then run
+`Pkg.build("PATH")`.
