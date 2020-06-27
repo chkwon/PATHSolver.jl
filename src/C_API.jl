@@ -455,6 +455,7 @@ function solve_mcp(
     @assert length(z) == length(lb) == length(ub)
 
     out_io = silent ? IOBuffer() : stdout
+    GC.@preserve out_io begin
     c_api_Output_SetInterface(OutputInterface(out_io))
 
     n = length(z)
@@ -489,6 +490,7 @@ function solve_mcp(
     c_api_Options_Display(o)
     info = Information(use_start = true)
     status = c_api_Path_Solve(m, info)
+    end  # GC.@preserve
     X = c_api_MCP_GetX(m)
     # TODO(odow): I don't know why, but manually calling MCP_Destroy was
     # necessary to avoid a segfault on Julia 1.0 when using LUSOL. I guess it's
