@@ -1,9 +1,6 @@
 module PATHSolver
 
-include("FunctionWrappersQuickFix.jl")
-
 using ForwardDiff
-using .FunctionWrappersQuickFix: FunctionWrapper
 using SparseArrays
 using Random
 using LinearAlgebra
@@ -16,12 +13,6 @@ else
 end
 
 export solveMCP, solveLCP, options
-
-# Global function pointers for the user-supplied function and jacobian evaluators.
-const user_f = Ref(FunctionWrapper{Vector{Cdouble}, Tuple{Vector{Cdouble}}}(identity))
-# The annotated SparseMatrixCSC return type will automatically convert the
-# jacobian into the correct sparse form for PATH
-const user_j = Ref(FunctionWrapper{SparseMatrixCSC{Cdouble, Cint}, Tuple{Vector{Cdouble}}}(identity))
 
 const cached_J = [convert(SparseMatrixCSC{Cdouble, Cint}, zeros(0, 0))]
 const cached_J_filled = Ref(false)
@@ -52,7 +43,7 @@ count_nonzeros(M::AbstractMatrix) = count(x -> x != 0, M) # fallback for dense m
 function f_user_wrap(n::Cint, z_ptr::Ptr{Cdouble}, f_ptr::Ptr{Cdouble})
   z = unsafe_wrap(Array{Cdouble}, z_ptr, Int(n), own=false)
   f = unsafe_wrap(Array{Cdouble}, f_ptr, Int(n), own=false)
-  f .= user_f[](z)
+  f .= user_f(z)
   return Cint(0)
 end
 
@@ -61,7 +52,7 @@ function j_user_wrap(n::Cint, expected_nnz::Cint, z_ptr::Ptr{Cdouble},
                      row_ptr::Ptr{Cint}, data_ptr::Ptr{Cdouble})
 
   z = unsafe_wrap(Array{Cdouble}, z_ptr, Int(n), own=false)
-  J::SparseMatrixCSC{Cdouble, Cint} = user_j[](z)
+  J::SparseMatrixCSC{Cdouble, Cint} = user_j(z)
   if nnz(J) > expected_nnz
     println("nnz(J) = ", nnz(J))
     println("expected_nnz = ", expected_nnz)
@@ -170,8 +161,8 @@ function solveMCP(f_eval::Function, j_eval::Function,
     con_name = C_NULL
   end
 
-  user_f[] = f_eval
-  user_j[] = j_eval
+  global user_f = f_eval
+  global user_j = j_eval
   f_user_cb = @cfunction(f_user_wrap, Cint, (Cint, Ptr{Cdouble}, Ptr{Cdouble}))
   j_user_cb = @cfunction(j_user_wrap, Cint, (Cint, Cint, Ptr{Cdouble}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}))
 
@@ -275,7 +266,7 @@ function solveLCP(f_eval::Function, M::AbstractMatrix,
       end
   end
 
-  user_f[] = f_eval
+  global user_f = f_eval
   cached_J[] = M
   cached_J_filled[] = false
   f_user_cb = @cfunction(f_user_wrap, Cint, (Cint, Ptr{Cdouble}, Ptr{Cdouble}))
