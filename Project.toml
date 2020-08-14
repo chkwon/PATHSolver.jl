@@ -1,6 +1,6 @@
 name = "PATHSolver"
 uuid = "f5f7c340-0bb3-5c69-969a-41884d311d1b"
-version = "0.6.1"
+version = "0.6.2"
 
 [deps]
 BinDeps = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
