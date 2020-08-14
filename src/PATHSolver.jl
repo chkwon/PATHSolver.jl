@@ -1,9 +1,6 @@
 module PATHSolver
 
-# include("FunctionWrappersQuickFix.jl")
-
 using ForwardDiff
-# using .FunctionWrappersQuickFix: FunctionWrapper
 using SparseArrays
 using Random
 using LinearAlgebra
@@ -16,12 +13,6 @@ else
 end
 
 export solveMCP, solveLCP, options
-
-# Global function pointers for the user-supplied function and jacobian evaluators.
-# const user_f = Ref(FunctionWrapper{Vector{Cdouble}, Tuple{Vector{Cdouble}}}(identity))
-# The annotated SparseMatrixCSC return type will automatically convert the
-# jacobian into the correct sparse form for PATH
-# const user_j = Ref(FunctionWrapper{SparseMatrixCSC{Cdouble, Cint}, Tuple{Vector{Cdouble}}}(identity))
 
 const cached_J = [convert(SparseMatrixCSC{Cdouble, Cint}, zeros(0, 0))]
 const cached_J_filled = Ref(false)
