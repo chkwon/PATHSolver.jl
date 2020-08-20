@@ -5,7 +5,6 @@
 
 
 [![Build Status](https://travis-ci.org/chkwon/PATHSolver.jl.svg?branch=master)](https://travis-ci.org/chkwon/PATHSolver.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/ul9rb8v2rsxm445d?svg=true)](https://ci.appveyor.com/project/chkwon/pathsolver-jl)
 [![Coverage Status](https://coveralls.io/repos/github/chkwon/PATHSolver.jl/badge.svg?branch=master)](https://coveralls.io/github/chkwon/PATHSolver.jl?branch=master)
 
 
