@@ -79,6 +79,12 @@ end
 
 MOI.get(model::Optimizer, ::MOI.SolverName) = c_api_Path_Version()
 
+function MOI.supports(
+    ::Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex}
+)
+    return true
+end
+
 function MOI.get(
     model::Optimizer, ::MOI.VariablePrimalStart, x::MOI.VariableIndex
 )

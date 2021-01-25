@@ -170,6 +170,7 @@ end
     MOI.set(model, MOI.Silent(), true)
     @test MOI.get(model, MOI.Silent()) == true
     x = MOI.add_variables(model, 4)
+    @test MOI.supports(model, MOI.VariablePrimalStart(), MOI.VariableIndex)
     @test MOI.get(model, MOI.VariablePrimalStart(), x[1]) === nothing
     MOI.add_constraint.(model, MOI.SingleVariable.(x), MOI.Interval(0.0, 10.0))
     MOI.set.(model, MOI.VariablePrimalStart(), x, 0.0)

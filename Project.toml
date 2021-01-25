@@ -1,7 +1,7 @@
 name = "PATH"
 uuid = "8d10db4a-e520-11e9-3c98-0d412f7fe1fc"
 authors = ["Oscar Dowson <oscar.dowson@northwestern.edu>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
