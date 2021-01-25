@@ -2,10 +2,8 @@
 
 A Julia interface to the [PATH solver](http://pages.cs.wisc.edu/~ferris/path.html).
 
-[![][travis-img]][travis-url]
-
-[travis-img]: https://api.travis-ci.com/odow/PATH.jl.svg?branch=master
-[travis-url]: https://travis-ci.com/odow/PATH.jl
+[![Build Status](https://github.com/odow/PATH.jl/workflows/CI/badge.svg?branch=master)](https://github.com/odow/PATH.jl/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/odow/PATH.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/odow/PATH.jl)
 
 ## Installation
 
