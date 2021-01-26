@@ -1,11 +1,5 @@
-*.jl.cov
-*.jl.*.cov
-*.jl.mem
+deps/include
+deps/*.dylib
 
-path.opt
-
-pathlib/*
-pathlib-test/*
-tmp/*
-
-libgfortran*
+.DS_Store
+Manifest.toml
