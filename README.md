@@ -1,3 +1,14 @@
+**PATHSolver.jl was completely re-written between v0.6 and v1.0. It now uses PATH 
+v5.0 binaries, and integrates directly into JuMP.**
+
+**To revert to the old API, use:**
+```julia
+import Pkg
+Pkg.add(Pkg.PackageSpec(name = "PATHSolver", version = v"0.6"))
+```
+**Then restart Julia for the change to take effect. The old documentation and
+source code is available [on the path-solver-v0 branch](https://github.com/chkwon/PATHSolver.jl/tree/path-solver-v0).**
+
 # PATHSolver.jl
 
 A Julia interface to the [PATH solver](http://pages.cs.wisc.edu/~ferris/path.html).
