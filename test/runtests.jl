@@ -1,8 +1,8 @@
-using PATHSolver
-using ForwardDiff, SparseArrays, Random
 using Test
 
-include("sparse_matrix.jl")
-include("mcp.jl")
-include("lcp.jl")
-include("custom_nnz.jl")
+@testset "PATH" begin
+    @testset "$(file)" for file in ["C_API.jl", "MOI_wrapper.jl"]
+        println("Running: $(file)")
+        include(file)
+    end
+end
