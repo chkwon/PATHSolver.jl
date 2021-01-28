@@ -4,8 +4,9 @@ v5.0 binaries, and integrates directly into JuMP.**
 **To revert to the old API, use:**
 ```julia
 import Pkg
-Pkg.add(Pkg.PackageSpec(name = "PATHSolver", version = v"0.6"))
+Pkg.add(Pkg.PackageSpec(name = "PATHSolver", version = v"0.6.2"))
 ```
+
 **Then restart Julia for the change to take effect. The old documentation and
 source code is available [on the path-solver-v0 branch](https://github.com/chkwon/PATHSolver.jl/tree/path-solver-v0).**
 
