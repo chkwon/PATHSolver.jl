@@ -111,8 +111,8 @@ mutable struct InterfaceData
     lb::Vector{Cdouble}
     ub::Vector{Cdouble}
     z::Vector{Cdouble}
-    variable_name::Vector{String}
-    constraint_name::Vector{String}
+    variable_names::Vector{String}
+    constraint_names::Vector{String}
 end
 
 function _c_problem_size(
@@ -184,27 +184,37 @@ function _c_jacobian_evaluation(
     return err
 end
 
-function _c_variable_name(id_ptr::Ptr{Cvoid}, variable_idx::Cint, buffer::Ptr{Cuchar}, buf_size::Cint)
+function _c_variable_name(
+    id_ptr::Ptr{Cvoid},
+    i::Cint,
+    buf_ptr::Ptr{UInt8},
+    buf_size::Cint
+)
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
-    str = id_data.variable_name[variable_idx]
-    # mimicking `strncpy` of Clang
-    if length(str) < buf_size
-        str *= "\0" ^ (buf_size-length(str))
+    name = collect(codeunits(id_data.variable_names[i]))
+    n = length(name)
+    resize!(name, buf_size)
+    name[min(buf_size, n + 1):end] .= UInt8('\0')
+    GC.@preserve name begin
+        unsafe_copyto!(buf_ptr, pointer(name), buf_size)
     end
-    str = str[1:buf_size] * "\0"
-    unsafe_copyto!(buffer, pointer(str), length(str))
     return
 end
 
-function _c_constraint_name(id_ptr::Ptr{Cvoid}, constr_idx::Cint, buffer::Ptr{Cuchar}, buf_size::Cint)
+function _c_constraint_name(
+    id_ptr::Ptr{Cvoid},
+    i::Cint,
+    buf_ptr::Ptr{UInt8},
+    buf_size::Cint
+)
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
-    str = id_data.constraint_name[constr_idx]
-    # mimicking `strncpy` of Clang
-    if length(str) < buf_size
-        str *= "\0" ^ (buf_size-length(str))
+    name = collect(codeunits(id_data.constraint_names[i]))
+    n = length(name)
+    resize!(name, buf_size)
+    name[min(buf_size, n + 1):end] .= UInt8('\0')
+    GC.@preserve name begin
+        unsafe_copyto!(buf_ptr, pointer(name), buf_size)
     end
-    str = str[1:buf_size] * "\0"
-    unsafe_copyto!(buffer, pointer(str), length(str))
     return
 end
 
@@ -258,7 +268,7 @@ mutable struct MCP_Interface
                 Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}
             )
         )
-        if isempty(interface_data.variable_name)
+        if isempty(interface_data.variable_names)
             _C_VARIABLE_NAME = C_NULL
         else
             _C_VARIABLE_NAME = @cfunction(
@@ -267,7 +277,7 @@ mutable struct MCP_Interface
                 (Ptr{Cvoid}, Cint, Ptr{Cuchar}, Cint)
             )
         end
-        if isempty(interface_data.constraint_name)
+        if isempty(interface_data.constraint_names)
             _C_CONSTRAINT_NAME = C_NULL
         else
             _C_CONSTRAINT_NAME = @cfunction(
@@ -497,8 +507,8 @@ function solve_mcp(
     ub::Vector{Cdouble},
     z::Vector{Cdouble};
     nnz::Int = length(lb)^2,
-    variable_name::Vector{String}=String[],
-    constraint_name::Vector{String}=String[],
+    variable_names::Vector{String} = String[],
+    constraint_names::Vector{String} = String[],
     silent::Bool = false,
     kwargs...
 )
@@ -531,7 +541,11 @@ function solve_mcp(
     c_api_Path_AddOptions(o)
     c_api_Options_Default(o)
     m = c_api_MCP_Create(n, nnz)
-    m.id_data = InterfaceData(Cint(n), Cint(nnz), F, J, lb, ub, z, variable_name, constraint_name)
+    m.id_data = InterfaceData(
+        Cint(n), Cint(nnz), 
+        F, J, lb, ub, z, 
+        variable_names, constraint_names
+    )
     m_interface = MCP_Interface(m.id_data)
     c_api_MCP_SetInterface(m, m_interface)
     if length(kwargs) > 0

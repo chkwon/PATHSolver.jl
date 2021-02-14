@@ -28,7 +28,7 @@ end
         fill(0.0, 4),
         fill(10.0, 4),
         [0.0, 0.0, 0.0, 0.0];
-        output = "no",
+        output = "yes",
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
@@ -143,8 +143,8 @@ end
         fill(0.0, 4),
         fill(10.0, 4),
         z0;
-        variable_name = ["x1", "x2", "x3", "x4"],
-        constraint_name = ["F1", "F2", "F3", "F4"],        
+        variable_names = ["x1", "x2", "x3", "x4"],
+        constraint_names = ["F1", "F2", "F3", "F4"],        
         output = "yes",
     )
     @test status == PATHSolver.MCP_Solved
@@ -156,10 +156,23 @@ end
         fill(0.0, 4),
         fill(10.0, 4),
         z0;
-        variable_name = ["x1", "x2", "x3", "x4"],
-        constraint_name = ["F_VeryVeryLong_NAME_1", "F_VeryVeryLong_NAME_2", "F_VeryVeryLong_NAME_3", "F_VeryVeryLong_NAME_4"],      
+        variable_names = ["x1", "x2", "x3", "x4"],
+        constraint_names = ["A2345678901234567890", "B23456789012345678901234567", "C234567890", "D234567890"],      
         output = "yes",
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])    
+
+    status, z, info = PATHSolver.solve_mcp(
+        M,
+        Float64[2, 2, -2, -6],
+        fill(0.0, 4),
+        fill(10.0, 4),
+        z0;
+        variable_names = ["x1", "x2", "x3", "x4"],
+        constraint_names = ["A2345678901234567890", "B23456789012345678901234567", "C🤖λ⚽️⚽️⚽️⚽️🏸⚽️⚽️⚽️⚽️🏸", "D도레미파솔"],      
+        output = "yes",
+    )
+    @test status == PATHSolver.MCP_Solved
+    @test isapprox(z, [2.8, 0.0, 0.8, 1.2])     
 end
