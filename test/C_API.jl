@@ -28,7 +28,7 @@ end
         fill(0.0, 4),
         fill(10.0, 4),
         [0.0, 0.0, 0.0, 0.0];
-        output = "no",
+        output = "yes",
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
@@ -121,4 +121,58 @@ end
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [1.28475, 0.972916, 0.909376, 1.17304], atol=1e-4)
+end
+
+
+@testset "Name Test" begin
+    M = convert(
+        SparseArrays.SparseMatrixCSC{Cdouble, Cint},
+        SparseArrays.sparse([
+            0  0 -1 -1;
+            0  0  1 -2;
+            1 -1  2 -2;
+            1  2 -2  4
+        ])
+    )
+
+    z0 = [-10.0, 10.0, -5.0, 5.0]
+
+    status, z, info = PATHSolver.solve_mcp(
+        M,
+        Float64[2, 2, -2, -6],
+        fill(0.0, 4),
+        fill(10.0, 4),
+        z0;
+        variable_names = ["x1", "x2", "x3", "x4"],
+        constraint_names = ["F1", "F2", "F3", "F4"],        
+        output = "yes",
+    )
+    @test status == PATHSolver.MCP_Solved
+    @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
+
+    status, z, info = PATHSolver.solve_mcp(
+        M,
+        Float64[2, 2, -2, -6],
+        fill(0.0, 4),
+        fill(10.0, 4),
+        z0;
+        variable_names = ["x1", "x2", "x3", "x4"],
+        constraint_names = ["A2345678901234567890", "B23456789012345678901234567", "C234567890", "D234567890"],      
+        output = "yes",
+    )
+    @test status == PATHSolver.MCP_Solved
+    @test isapprox(z, [2.8, 0.0, 0.8, 1.2])    
+
+    status, z, info = PATHSolver.solve_mcp(
+        M,
+        Float64[2, 2, -2, -6],
+        fill(0.0, 4),
+        fill(10.0, 4),
+        z0;
+        variable_names = ["x1", "x2", "x3", "x4"],
+        constraint_names = ["A2345678901234567890", "B23456789012345678901234567", "C🤖λ⚽️⚽️⚽️⚽️🏸⚽️⚽️⚽️⚽️🏸", "D도레미파솔"],      
+        output = "yes",
+    )
+    @test status == PATHSolver.MCP_Solved
+    @test isapprox(z, [2.8, 0.0, 0.8, 1.2])     
 end

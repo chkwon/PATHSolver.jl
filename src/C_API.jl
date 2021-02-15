@@ -111,6 +111,8 @@ mutable struct InterfaceData
     lb::Vector{Cdouble}
     ub::Vector{Cdouble}
     z::Vector{Cdouble}
+    variable_names::Vector{String}
+    constraint_names::Vector{String}
 end
 
 function _c_problem_size(
@@ -182,6 +184,42 @@ function _c_jacobian_evaluation(
     return err
 end
 
+function _c_variable_name(
+    id_ptr::Ptr{Cvoid},
+    i::Cint,
+    buf_ptr::Ptr{UInt8},
+    buf_size::Cint
+)
+    id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
+    name = collect(codeunits(id_data.variable_names[i]))
+    n = length(name)
+    resize!(name, buf_size)
+    name[min(buf_size, n + 1):end] .= UInt8('\0')
+    GC.@preserve name begin
+        unsafe_copyto!(buf_ptr, pointer(name), buf_size)
+    end
+    return
+end
+
+function _c_constraint_name(
+    id_ptr::Ptr{Cvoid},
+    i::Cint,
+    buf_ptr::Ptr{UInt8},
+    buf_size::Cint
+)
+    id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
+    name = collect(codeunits(id_data.constraint_names[i]))
+    n = length(name)
+    resize!(name, buf_size)
+    name[min(buf_size, n + 1):end] .= UInt8('\0')
+    GC.@preserve name begin
+        unsafe_copyto!(buf_ptr, pointer(name), buf_size)
+    end
+    return
+end
+
+
+
 """
     MCP_Interface
 
@@ -230,6 +268,24 @@ mutable struct MCP_Interface
                 Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}
             )
         )
+        if isempty(interface_data.variable_names)
+            _C_VARIABLE_NAME = C_NULL
+        else
+            _C_VARIABLE_NAME = @cfunction(
+                _c_variable_name,
+                Cvoid,
+                (Ptr{Cvoid}, Cint, Ptr{Cuchar}, Cint)
+            )
+        end
+        if isempty(interface_data.constraint_names)
+            _C_CONSTRAINT_NAME = C_NULL
+        else
+            _C_CONSTRAINT_NAME = @cfunction(
+                _c_constraint_name,
+                Cvoid,
+                (Ptr{Cvoid}, Cint, Ptr{Cuchar}, Cint)
+            )      
+        end            
 
         return new(
             pointer_from_objref(interface_data),
@@ -240,8 +296,8 @@ mutable struct MCP_Interface
             C_NULL,
             C_NULL,  # See TODO note in definition of fields above.
             C_NULL,
-            C_NULL,
-            C_NULL,
+            _C_VARIABLE_NAME,
+            _C_CONSTRAINT_NAME,
             C_NULL
         )
     end
@@ -423,6 +479,8 @@ end
         ub::Vector{Cdouble},
         z::Vector{Cdouble};
         nnz::Int = length(lb)^2,
+        variable_name::Vector{String}=String[],
+        constraint_name::Vector{String}=String[],        
         silent::Bool = false,
         kwargs...
     )
@@ -449,6 +507,8 @@ function solve_mcp(
     ub::Vector{Cdouble},
     z::Vector{Cdouble};
     nnz::Int = length(lb)^2,
+    variable_names::Vector{String} = String[],
+    constraint_names::Vector{String} = String[],
     silent::Bool = false,
     kwargs...
 )
@@ -481,7 +541,11 @@ function solve_mcp(
     c_api_Path_AddOptions(o)
     c_api_Options_Default(o)
     m = c_api_MCP_Create(n, nnz)
-    m.id_data = InterfaceData(Cint(n), Cint(nnz), F, J, lb, ub, z)
+    m.id_data = InterfaceData(
+        Cint(n), Cint(nnz), 
+        F, J, lb, ub, z, 
+        variable_names, constraint_names
+    )
     m_interface = MCP_Interface(m.id_data)
     c_api_MCP_SetInterface(m, m_interface)
     if length(kwargs) > 0
@@ -552,11 +616,11 @@ end
 
 """
     solve_mcp(;
-        M::SparseArrays.CompressedSparseMatrixCSC{Cdouble, Cint},
+        M::SparseArrays.SparseMatrixCSC{Cdouble, Cint},
         q::Vector{Cdouble},
         lb::Vector{Cdouble},
         ub::Vector{Cdouble},
-        z::Vector{Cdouble};
+        z::Vector{Cdouble};    
         kwargs...
     )
 
@@ -577,8 +641,7 @@ function solve_mcp(
     q::Vector{Cdouble},
     lb::Vector{Cdouble},
     ub::Vector{Cdouble},
-    z::Vector{Cdouble};
-    silent::Bool = false,
+    z::Vector{Cdouble};  
     kwargs...
 )
     return solve_mcp(
@@ -588,7 +651,6 @@ function solve_mcp(
         ub,
         z;
         nnz = SparseArrays.nnz(M),
-        silent = silent,
         kwargs...
     )
 end
