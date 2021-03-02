@@ -33,10 +33,7 @@ end
     @testset "Binary" begin
         model = PATHSolver.Optimizer()
         x = MOI.add_variable(model)
-        @test_throws(
-            MOI.UnsupportedConstraint,
-            MOI.add_constraint(model, MOI.SingleVariable(x), MOI.ZeroOne())
-        )
+        @test MOI.supports_constraint(model, MOI.SingleVariable, MOI.ZeroOne) == false
     end
     @testset "wrong dimension" begin
         model = PATHSolver.Optimizer()
