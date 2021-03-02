@@ -18,7 +18,7 @@ const c_api_Output_Status  = Cint(1 << 1)
 const c_api_Output_Listing = Cint(1 << 2)
 
 mutable struct OutputData
-    silent::Bool
+    io::IO
 end
 
 mutable struct OutputInterface
@@ -29,9 +29,7 @@ end
 
 function _c_flush(data::Ptr{Cvoid}, mode::Cint)
     output_data = unsafe_pointer_to_objref(data)::OutputData
-    if !output_data.silent
-        flush(stdout)
-    end
+    flush(output_data.io)
     return
 end
 
@@ -44,9 +42,7 @@ function _c_print(data::Ptr{Cvoid}, mode::Cint, msg::Ptr{Cchar})
         mode & c_api_Output_Listing == c_api_Output_Listing
     )
         output_data = unsafe_pointer_to_objref(data)::OutputData
-        if !output_data.silent
-            print(stdout, unsafe_string(msg))
-    end
+        print(output_data.io, unsafe_string(msg))
     end
     return
 end
@@ -54,9 +50,6 @@ end
 function OutputInterface(output_data)
     _C_PRINT = @cfunction(_c_print, Cvoid, (Ptr{Cvoid}, Cint, Ptr{Cchar}))
     _C_FLUSH = @cfunction(_c_flush, Cvoid, (Ptr{Cvoid}, Cint))
-    # Without this call to flush everything segfaults on Windows. Very unclear
-    # why, though...
-    flush(stdout)
     return OutputInterface(pointer_from_objref(output_data), _C_PRINT, _C_FLUSH)
 end
 
@@ -524,9 +517,9 @@ function solve_mcp(
     kwargs...
 )
     @assert length(z) == length(lb) == length(ub)
-    output_data = OutputData(silent)
+    out_io = silent ? IOBuffer() : stdout
+    output_data = OutputData(out_io)
     GC.@preserve output_data begin
-    # GC.@preserve output_interface begin
     c_api_Output_SetInterface(OutputInterface(output_data))
 
     n = length(z)
