@@ -1,5 +1,6 @@
 deps/include
 deps/*.dylib
+deps/*.dll
 
 .DS_Store
 Manifest.toml
