@@ -17,6 +17,10 @@ const c_api_Output_Log     = Cint(1 << 0)
 const c_api_Output_Status  = Cint(1 << 1)
 const c_api_Output_Listing = Cint(1 << 2)
 
+mutable struct OutputData
+    io::IO
+end
+
 mutable struct OutputInterface
     output_data::Ptr{Cvoid}
     print::Ptr{Cvoid}
@@ -24,8 +28,8 @@ mutable struct OutputInterface
 end
 
 function _c_flush(data::Ptr{Cvoid}, mode::Cint)
-    io = unsafe_pointer_to_objref(data)::IO
-    flush(io)
+    output_data = unsafe_pointer_to_objref(data)::OutputData
+    flush(output_data.io)
     return
 end
 
@@ -37,16 +41,16 @@ function _c_print(data::Ptr{Cvoid}, mode::Cint, msg::Ptr{Cchar})
         # mode & c_api_Output_Status == c_api_Output_Status ||
         mode & c_api_Output_Listing == c_api_Output_Listing
     )
-        io = unsafe_pointer_to_objref(data)::IO
-        print(io, unsafe_string(msg))
+        output_data = unsafe_pointer_to_objref(data)::OutputData
+        print(output_data.io, unsafe_string(msg))
     end
     return
 end
 
-function OutputInterface(io)
+function OutputInterface(output_data)
     _C_PRINT = @cfunction(_c_print, Cvoid, (Ptr{Cvoid}, Cint, Ptr{Cchar}))
     _C_FLUSH = @cfunction(_c_flush, Cvoid, (Ptr{Cvoid}, Cint))
-    return OutputInterface(pointer_from_objref(io), _C_PRINT, _C_FLUSH)
+    return OutputInterface(pointer_from_objref(output_data), _C_PRINT, _C_FLUSH)
 end
 
 function c_api_Output_SetInterface(o::OutputInterface)
@@ -513,17 +517,10 @@ function solve_mcp(
     kwargs...
 )
     @assert length(z) == length(lb) == length(ub)
-    if !silent && isimmutable(stdout)
-        @warn(
-            "Disabling output because PATH.jl does not support writing to " *
-            "this `stdout`. Are you using Atom-Hydrogen or Jupyter? See: " *
-            "https://github.com/odow/PATH.jl/issues/10."
-        )
-        silent = true
-    end
     out_io = silent ? IOBuffer() : stdout
-    GC.@preserve out_io begin
-    c_api_Output_SetInterface(OutputInterface(out_io))
+    output_data = OutputData(out_io)
+    GC.@preserve output_data begin
+    c_api_Output_SetInterface(OutputInterface(output_data))
 
     n = length(z)
     if n == 0
