@@ -15,7 +15,7 @@ MOI.Utilities.@model(
 
 function MOI.supports_constraint(
     ::Optimizer,
-    ::Type{MOI.SingleVariable},
+    ::Type{MOI.VariableIndex},
     ::Type{S},
 ) where {S<:Union{MOI.Semiinteger,MOI.Semicontinuous,MOI.ZeroOne,MOI.Integer}}
     return false
@@ -26,7 +26,7 @@ function MOI.supports(
     ::MOI.ObjectiveFunction{F},
 ) where {
     F<:Union{
-        MOI.SingleVariable,
+        MOI.VariableIndex,
         MOI.ScalarAffineFunction,
         MOI.ScalarQuadraticFunction,
     },
@@ -49,7 +49,7 @@ end
 
 Define a new PATH optimizer.
 
-Pass options using `MOI.RawParameter`. Common options include:
+Pass options using `MOI.RawOptimizerAttribute`. Common options include:
 
  - output => "yes"
  - convergence_tolerance => 1e-6
@@ -60,7 +60,7 @@ A full list of options can be found at http://pages.cs.wisc.edu/~ferris/path/opt
 ### Example
 
     optimizer = PATH.Optimizer()
-    MOI.set(optimizer, MOI.RawParameter("output"), "no")
+    MOI.set(optimizer, MOI.RawOptimizerAttribute("output"), "no")
 """
 function Optimizer()
     model = Optimizer{Float64}()
@@ -70,12 +70,12 @@ function Optimizer()
     return model
 end
 
-function MOI.set(model::Optimizer, p::MOI.RawParameter, v)
+function MOI.set(model::Optimizer, p::MOI.RawOptimizerAttribute, v)
     model.ext[:kwargs][Symbol(p.name)] = v
     return
 end
 
-function MOI.get(model::Optimizer, p::MOI.RawParameter)
+function MOI.get(model::Optimizer, p::MOI.RawOptimizerAttribute)
     return get(model.ext[:kwargs], Symbol(p.name), nothing)
 end
 
@@ -143,42 +143,41 @@ function _F_linear_operator(model::Optimizer)
     )
         Fi = MOI.get(model, MOI.ConstraintFunction(), index)
         Si = MOI.get(model, MOI.ConstraintSet(), index)
-
-        if 2 * Si.dimension != length(Fi.constants)
+        var_i = div(Si.dimension, 2) + 1
+        if Si.dimension != length(Fi.constants)
             error(
                 "Dimension of constant vector $(length(Fi.constants)) does not match the " *
-                "required dimension of the complementarity set $(2 * Si.dimension).",
+                "required dimension of the complementarity set $(Si.dimension).",
             )
-        elseif any(i -> !iszero(Fi.constants[Si.dimension+i]), 1:Si.dimension)
+        elseif any(!iszero, Fi.constants[var_i:end])
             error(
                 "VectorAffineFunction malformed: a constant associated with a " *
-                "complemented variable is not zero: $(Fi.constants[Si.dimension+1:end]).",
+                "complemented variable is not zero: $(Fi.constants[var_i:end]).",
             )
         end
-
         # First pass: get rows vector and check for invalid functions.
         rows = fill(0, Si.dimension)
         for term in Fi.terms
-            if term.output_index <= Si.dimension
+            if term.output_index <= div(Si.dimension, 2)
                 # No-op: leave for second pass.
                 continue
-            elseif term.output_index > 2 * Si.dimension
+            elseif term.output_index > Si.dimension
                 error(
                     "VectorAffineFunction malformed: output_index $(term.output_index) " *
                     "is too large.",
                 )
             end
-            dimension_i = term.output_index - Si.dimension
-            row_i = term.scalar_term.variable_index.value
+            dimension_i = term.output_index - div(Si.dimension, 2)
+            row_i = term.scalar_term.variable.value
             if rows[dimension_i] != 0 || has_term[row_i]
                 error(
-                    "The variable $(term.scalar_term.variable_index) appears in more " *
+                    "The variable $(term.scalar_term.variable) appears in more " *
                     "than one complementarity constraint.",
                 )
             elseif term.scalar_term.coefficient != 1.0
                 error(
                     "VectorAffineFunction malformed: variable " *
-                    "$(term.scalar_term.variable_index) has a coefficient that is not 1 " *
+                    "$(term.scalar_term.variable) has a coefficient that is not 1 " *
                     "in row $(term.output_index) of the VectorAffineFunction.",
                 )
             end
@@ -186,24 +185,22 @@ function _F_linear_operator(model::Optimizer)
             has_term[row_i] = true
             q[row_i] = Fi.constants[dimension_i]
         end
-
         # Second pass: add to sparse array
         for term in Fi.terms
             s_term = term.scalar_term
-            if term.output_index > Si.dimension || iszero(s_term.coefficient)
+            if term.output_index >= var_i || iszero(s_term.coefficient)
                 continue
             end
             row_i = rows[term.output_index]
             if iszero(row_i)
                 error(
                     "VectorAffineFunction malformed: expected variable in row " *
-                    "$(Si.dimension + term.output_index).",
+                    "$(div(Si.dimension, 2) + term.output_index).",
                 )
             end
-            M[row_i, s_term.variable_index.value] += s_term.coefficient
+            M[row_i, s_term.variable.value] += s_term.coefficient
         end
     end
-
     return M, q
 end
 
@@ -288,7 +285,7 @@ function MOI.get(
 end
 
 function MOI.get(model::Optimizer, attr::MOI.PrimalStatus)
-    if solution(model) === nothing || attr.N != 1
+    if solution(model) === nothing || attr.result_index != 1
         return MOI.NO_SOLUTION
     end
     if MOI.get(model, MOI.TerminationStatus()) == MOI.LOCALLY_SOLVED
@@ -296,3 +293,5 @@ function MOI.get(model::Optimizer, attr::MOI.PrimalStatus)
     end
     return MOI.UNKNOWN_RESULT_STATUS
 end
+
+MOI.get(::Optimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION

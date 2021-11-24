@@ -1,18 +1,33 @@
+module TestCAPI
+
 using PATHSolver
 using SparseArrays
 using Test
 
-@testset "CheckLicense" begin
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
+function test_CheckLicense()
     @test PATHSolver.c_api_License_SetString("bad_license") != 0
     @test PATHSolver.c_api_Path_CheckLicense(1, 1) > 0
+    return
 end
 
-@testset "PathVersion" begin
+function test_PathVersion()
     s = PATHSolver.c_api_Path_Version()
     @test match(r"Path [0-9]\.[0-9]\.[0-9][0-9]", s) !== nothing
+    return
 end
 
-@testset "Example" begin
+function test_Example()
     M = convert(
         SparseArrays.SparseMatrixCSC{Cdouble,Cint},
         SparseArrays.sparse([
@@ -32,9 +47,10 @@ end
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
+    return
 end
 
-@testset "Example LUSOL" begin
+function test_Example_LUSOL()
     M = convert(
         SparseArrays.SparseMatrixCSC{Cdouble,Cint},
         SparseArrays.sparse([
@@ -57,18 +73,17 @@ end
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
+    return
 end
 
-@testset "Example II" begin
+function test_Example_II()
     M = [
         0 0 -1 -1
         0 0 1 -2
         1 -1 2 -2
         1 2 -2 4
     ]
-
     q = [2; 2; -2; -6]
-
     function F(n::Cint, x::Vector{Cdouble}, f::Vector{Cdouble})
         @assert n == length(x) == length(f) == 4
         f[1] = -x[3]^2 - x[4] + q[1]
@@ -77,7 +92,6 @@ end
         f[4] = x[1] + 2x[2]^3 - 2x[3] + 4x[4] + q[4]
         return Cint(0)
     end
-
     function J(
         n::Cint,
         nnz::Cint,
@@ -110,7 +124,6 @@ end
         end
         return Cint(0)
     end
-
     status, z, info = PATHSolver.solve_mcp(
         F,
         J,
@@ -121,9 +134,10 @@ end
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [1.28475, 0.972916, 0.909376, 1.17304], atol = 1e-4)
+    return
 end
 
-@testset "Name Test" begin
+function test_Name()
     M = convert(
         SparseArrays.SparseMatrixCSC{Cdouble,Cint},
         SparseArrays.sparse([
@@ -133,9 +147,7 @@ end
             1 2 -2 4
         ]),
     )
-
     z0 = [-10.0, 10.0, -5.0, 5.0]
-
     status, z, info = PATHSolver.solve_mcp(
         M,
         Float64[2, 2, -2, -6],
@@ -148,7 +160,6 @@ end
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
-
     status, z, info = PATHSolver.solve_mcp(
         M,
         Float64[2, 2, -2, -6],
@@ -166,7 +177,6 @@ end
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
-
     status, z, info = PATHSolver.solve_mcp(
         M,
         Float64[2, 2, -2, -6],
@@ -185,3 +195,7 @@ end
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
 end
+
+end
+
+TestCAPI.runtests()
