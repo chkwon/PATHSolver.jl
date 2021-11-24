@@ -1,173 +1,200 @@
+module TestMOIWrapper
+
 using PATHSolver
 using Test
 
 using MathOptInterface
 const MOI = MathOptInterface
 
-@testset "MOI.Name" begin
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
+function test_Name()
     model = PATHSolver.Optimizer()
     @test MOI.get(model, MOI.SolverName()) == PATHSolver.c_api_Path_Version()
+    return
 end
 
-@testset "MOI.AbstractOptimizer" begin
+function test_AbstractOptimizer()
     @test PATHSolver.Optimizer() isa MOI.AbstractOptimizer
+    return
 end
 
-@testset "RawParameter" begin
+function test_DualStatus()
+    @test MOI.get(PATHSolver.Optimizer(), MOI.DualStatus()) == MOI.NO_SOLUTION
+    return
+end
+
+function test_RawOptimizerAttribute()
     model = PATHSolver.Optimizer()
-    @test MOI.get(model, MOI.RawParameter("output")) === nothing
-    MOI.set(model, MOI.RawParameter("output"), "no")
-    @test MOI.get(model, MOI.RawParameter("output")) == "no"
+    @test MOI.get(model, MOI.RawOptimizerAttribute("output")) === nothing
+    MOI.set(model, MOI.RawOptimizerAttribute("output"), "no")
+    @test MOI.get(model, MOI.RawOptimizerAttribute("output")) == "no"
+    return
 end
 
-@testset "Invalid models" begin
-    @testset "Infeasible" begin
-        model = PATHSolver.Optimizer()
-        x = MOI.add_variable(model)
-        MOI.add_constraint(
-            model,
-            MOI.SingleVariable(x),
-            MOI.Interval(0.0, -1.0),
-        )
+function test_infeasible()
+    model = PATHSolver.Optimizer()
+    x = MOI.add_variable(model)
+    MOI.add_constraint(model, x, MOI.Interval(0.0, -1.0))
+    MOI.optimize!(model)
+    @test MOI.get(model, MOI.TerminationStatus()) == MOI.INVALID_MODEL
+    @test MOI.get(model, MOI.RawStatusString()) == "Problem has a bound error"
+    @test MOI.get(model, MOI.PrimalStatus()) == MOI.UNKNOWN_RESULT_STATUS
+end
+
+function test_ZeroOne()
+    model = PATHSolver.Optimizer()
+    x = MOI.add_variable(model)
+    @test !MOI.supports_constraint(model, MOI.VariableIndex, MOI.ZeroOne)
+    return
+end
+
+function test_wrong_dimension()
+    model = PATHSolver.Optimizer()
+    x = MOI.add_variable(model)
+    MOI.add_constraint(
+        model,
+        MOI.VectorAffineFunction(MOI.VectorAffineTerm{Float64}[], [0.0]),
+        MOI.Complements(2),
+    )
+    @test_throws(
+        ErrorException(
+            "Dimension of constant vector 1 does not match the required dimension of " *
+            "the complementarity set 2.",
+        ),
         MOI.optimize!(model)
-        @test MOI.get(model, MOI.TerminationStatus()) == MOI.INVALID_MODEL
-        @test MOI.get(model, MOI.RawStatusString()) ==
-              "Problem has a bound error"
-        @test MOI.get(model, MOI.PrimalStatus()) == MOI.UNKNOWN_RESULT_STATUS
-    end
-    @testset "Binary" begin
-        model = PATHSolver.Optimizer()
-        x = MOI.add_variable(model)
-        @test MOI.supports_constraint(model, MOI.SingleVariable, MOI.ZeroOne) ==
-              false
-    end
-    @testset "wrong dimension" begin
-        model = PATHSolver.Optimizer()
-        x = MOI.add_variable(model)
-        MOI.add_constraint(
-            model,
-            MOI.VectorAffineFunction(MOI.VectorAffineTerm{Float64}[], [0.0]),
-            MOI.Complements(1),
-        )
-        @test_throws(
-            ErrorException(
-                "Dimension of constant vector 1 does not match the required dimension of " *
-                "the complementarity set 2.",
-            ),
-            MOI.optimize!(model)
-        )
-    end
-    @testset "non-zero variable offset" begin
-        model = PATHSolver.Optimizer()
-        x = MOI.add_variable(model)
-        MOI.add_constraint(
-            model,
-            MOI.VectorAffineFunction(
-                [
-                    MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, x)),
-                    MOI.VectorAffineTerm(2, MOI.ScalarAffineTerm(1.0, x)),
-                ],
-                [0.0, 1.0],
-            ),
-            MOI.Complements(1),
-        )
-        @test_throws(
-            ErrorException(
-                "VectorAffineFunction malformed: a constant associated with a " *
-                "complemented variable is not zero: [1.0].",
-            ),
-            MOI.optimize!(model)
-        )
-    end
-    @testset "output dimension too large" begin
-        model = PATHSolver.Optimizer()
-        x = MOI.add_variable(model)
-        MOI.add_constraint(
-            model,
-            MOI.VectorAffineFunction(
-                [
-                    MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, x)),
-                    MOI.VectorAffineTerm(3, MOI.ScalarAffineTerm(1.0, x)),
-                ],
-                [0.0, 0.0],
-            ),
-            MOI.Complements(1),
-        )
-        @test_throws(
-            ErrorException(
-                "VectorAffineFunction malformed: output_index 3 is too large.",
-            ),
-            MOI.optimize!(model)
-        )
-    end
-    @testset "missing complement variable" begin
-        model = PATHSolver.Optimizer()
-        x = MOI.add_variable(model)
-        MOI.add_constraint(
-            model,
-            MOI.VectorAffineFunction(
-                [MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, x))],
-                [0.0, 0.0],
-            ),
-            MOI.Complements(1),
-        )
-        @test_throws(
-            ErrorException(
-                "VectorAffineFunction malformed: expected variable in row 2.",
-            ),
-            MOI.optimize!(model)
-        )
-    end
-    @testset "output dimension too large" begin
-        model = PATHSolver.Optimizer()
-        x = MOI.add_variable(model)
-        MOI.add_constraint(
-            model,
-            MOI.VectorAffineFunction(
-                [
-                    MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, x)),
-                    MOI.VectorAffineTerm(2, MOI.ScalarAffineTerm(2.0, x)),
-                ],
-                [0.0, 0.0],
-            ),
-            MOI.Complements(1),
-        )
-        @test_throws(
-            ErrorException(
-                "VectorAffineFunction malformed: variable $(x) has a coefficient that is " *
-                "not 1 in row 2 of the VectorAffineFunction.",
-            ),
-            MOI.optimize!(model)
-        )
-    end
-    @testset "variable in multiple constraints" begin
-        model = PATHSolver.Optimizer()
-        x = MOI.add_variable(model)
-        MOI.add_constraint(
-            model,
-            MOI.VectorAffineFunction(
-                [
-                    MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, x)),
-                    MOI.VectorAffineTerm(2, MOI.ScalarAffineTerm(1.0, x)),
-                    MOI.VectorAffineTerm(3, MOI.ScalarAffineTerm(1.0, x)),
-                    MOI.VectorAffineTerm(4, MOI.ScalarAffineTerm(1.0, x)),
-                ],
-                [0.0, 0.0, 0.0, 0.0],
-            ),
-            MOI.Complements(2),
-        )
-        @test_throws(
-            ErrorException(
-                "The variable $(x) appears in more than one complementarity constraint.",
-            ),
-            MOI.optimize!(model)
-        )
-    end
+    )
+    return
 end
 
-@testset "Example 1" begin
+function test_nonzero_variable_offset()
     model = PATHSolver.Optimizer()
-    MOI.set(model, MOI.RawParameter("time_limit"), 60)
+    x = MOI.add_variable(model)
+    MOI.add_constraint(
+        model,
+        MOI.VectorAffineFunction(
+            [
+                MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, x)),
+                MOI.VectorAffineTerm(2, MOI.ScalarAffineTerm(1.0, x)),
+            ],
+            [0.0, 1.0],
+        ),
+        MOI.Complements(2),
+    )
+    @test_throws(
+        ErrorException(
+            "VectorAffineFunction malformed: a constant associated with a " *
+            "complemented variable is not zero: [1.0].",
+        ),
+        MOI.optimize!(model)
+    )
+    return
+end
+
+function test_output_dimension_too_large()
+    model = PATHSolver.Optimizer()
+    x = MOI.add_variable(model)
+    MOI.add_constraint(
+        model,
+        MOI.VectorAffineFunction(
+            [
+                MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, x)),
+                MOI.VectorAffineTerm(3, MOI.ScalarAffineTerm(1.0, x)),
+            ],
+            [0.0, 0.0],
+        ),
+        MOI.Complements(2),
+    )
+    @test_throws(
+        ErrorException(
+            "VectorAffineFunction malformed: output_index 3 is too large.",
+        ),
+        MOI.optimize!(model)
+    )
+    return
+end
+
+function test_missing_complement_variable()
+    model = PATHSolver.Optimizer()
+    x = MOI.add_variable(model)
+    MOI.add_constraint(
+        model,
+        MOI.VectorAffineFunction(
+            [MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, x))],
+            [0.0, 0.0],
+        ),
+        MOI.Complements(2),
+    )
+    @test_throws(
+        ErrorException(
+            "VectorAffineFunction malformed: expected variable in row 2.",
+        ),
+        MOI.optimize!(model)
+    )
+    return
+end
+
+function test_output_dimension_too_large()
+    model = PATHSolver.Optimizer()
+    x = MOI.add_variable(model)
+    MOI.add_constraint(
+        model,
+        MOI.VectorAffineFunction(
+            [
+                MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, x)),
+                MOI.VectorAffineTerm(2, MOI.ScalarAffineTerm(2.0, x)),
+            ],
+            [0.0, 0.0],
+        ),
+        MOI.Complements(2),
+    )
+    @test_throws(
+        ErrorException(
+            "VectorAffineFunction malformed: variable $(x) has a coefficient that is " *
+            "not 1 in row 2 of the VectorAffineFunction.",
+        ),
+        MOI.optimize!(model)
+    )
+    return
+end
+
+function test_variable_in_multiple_constraints()
+    model = PATHSolver.Optimizer()
+    x = MOI.add_variable(model)
+    MOI.add_constraint(
+        model,
+        MOI.VectorAffineFunction(
+            [
+                MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, x)),
+                MOI.VectorAffineTerm(2, MOI.ScalarAffineTerm(1.0, x)),
+                MOI.VectorAffineTerm(3, MOI.ScalarAffineTerm(1.0, x)),
+                MOI.VectorAffineTerm(4, MOI.ScalarAffineTerm(1.0, x)),
+            ],
+            [0.0, 0.0, 0.0, 0.0],
+        ),
+        MOI.Complements(4),
+    )
+    @test_throws(
+        ErrorException(
+            "The variable $(x) appears in more than one complementarity constraint.",
+        ),
+        MOI.optimize!(model)
+    )
+    return
+end
+
+function test_Example_I()
+    model = PATHSolver.Optimizer()
+    MOI.set(model, MOI.RawOptimizerAttribute("time_limit"), 60)
     @test MOI.supports(model, MOI.Silent()) == true
     @test MOI.get(model, MOI.Silent()) == false
     MOI.set(model, MOI.Silent(), true)
@@ -175,7 +202,7 @@ end
     x = MOI.add_variables(model, 4)
     @test MOI.supports(model, MOI.VariablePrimalStart(), MOI.VariableIndex)
     @test MOI.get(model, MOI.VariablePrimalStart(), x[1]) === nothing
-    MOI.add_constraint.(model, MOI.SingleVariable.(x), MOI.Interval(0.0, 10.0))
+    MOI.add_constraint.(model, x, MOI.Interval(0.0, 10.0))
     MOI.set.(model, MOI.VariablePrimalStart(), x, 0.0)
     M = Float64[
         0 0 -1 -1
@@ -196,7 +223,7 @@ end
         MOI.add_constraint(
             model,
             MOI.VectorAffineFunction(terms, [q[i], 0.0]),
-            MOI.Complements(1),
+            MOI.Complements(2),
         )
     end
     @test MOI.get(model, MOI.TerminationStatus()) == MOI.OPTIMIZE_NOT_CALLED
@@ -209,6 +236,7 @@ end
     @test MOI.get(model, MOI.RawStatusString()) == "The problem was solved"
     x_val = MOI.get.(model, MOI.VariablePrimal(), x)
     @test isapprox(x_val, [2.8, 0.0, 0.8, 1.2])
+    return
 end
 
 # An implementation of the GAMS model transmcp.gms: transporation model
@@ -226,7 +254,7 @@ end
 #
 # Dantzig, G B, Chapter 3.3. In Linear Programming and Extensions.
 # Princeton University Press, Princeton, New Jersey, 1963.
-@testset "transmcp" begin
+function test_transmcp()
     plants = ["seattle", "san-diego"]
     P = length(plants)
     capacity = Dict("seattle" => 350, "san-diego" => 600)
@@ -241,22 +269,17 @@ end
         ("san-diego" => "chicago") => 1.8,
         ("san-diego" => "topeka") => 1.4,
     )
-
     model = PATHSolver.Optimizer()
     MOI.set(model, MOI.Silent(), true)
-
     # w[i in plants] >= 0
     w = MOI.add_variables(model, P)
-    MOI.add_constraint.(model, MOI.SingleVariable.(w), MOI.GreaterThan(0.0))
-
+    MOI.add_constraint.(model, w, MOI.GreaterThan(0.0))
     # p[j in markets] >= 0
     p = MOI.add_variables(model, M)
-    MOI.add_constraint.(model, MOI.SingleVariable.(p), MOI.GreaterThan(0.0))
-
+    MOI.add_constraint.(model, p, MOI.GreaterThan(0.0))
     # x[i in plants, j in markets] >= 0
     x = reshape(MOI.add_variables(model, P * M), P, M)
-    MOI.add_constraint.(model, MOI.SingleVariable.(x), MOI.GreaterThan(0.0))
-
+    MOI.add_constraint.(model, x, MOI.GreaterThan(0.0))
     # w[i] + 90 * distance[i => j] / 1000 - p[j] ⟂ x[i, j]
     for (i, plant) in enumerate(plants), (j, market) in enumerate(markets)
         MOI.add_constraint(
@@ -269,10 +292,9 @@ end
                 ],
                 [90 * distance[plant=>market] / 1000, 0.0],
             ),
-            MOI.Complements(1),
+            MOI.Complements(2),
         )
     end
-
     # capacity[i] - sum(x[i, :]) ⟂ w[i]
     terms = MOI.VectorAffineTerm{Float64}[]
     for (i, plant) in enumerate(plants)
@@ -291,9 +313,8 @@ end
     MOI.add_constraint(
         model,
         MOI.VectorAffineFunction(terms, q),
-        MOI.Complements(P),
+        MOI.Complements(2 * P),
     )
-
     # sum(x[:, j]) - demand[j] ⟂ p[j]
     terms = MOI.VectorAffineTerm{Float64}[]
     for (j, market) in enumerate(markets)
@@ -312,14 +333,17 @@ end
     MOI.add_constraint(
         model,
         MOI.VectorAffineFunction(terms, q),
-        MOI.Complements(M),
+        MOI.Complements(2 * M),
     )
-
     MOI.optimize!(model)
-
     @test isapprox(
         MOI.get.(model, MOI.VariablePrimal(), p),
         [0.225, 0.153, 0.126],
         atol = 1e-3,
     )
+    return
 end
+
+end
+
+TestMOIWrapper.runtests()
