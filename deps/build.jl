@@ -3,16 +3,16 @@ import Libdl
 const DEFAULT_PATH_URL = "http://pages.cs.wisc.edu/~ferris/path/julia/"
 
 function _prefix_suffix(str)
-    if Sys.islinux() &&  Sys.ARCH == :x86_64
+    if Sys.islinux() && Sys.ARCH == :x86_64
         return "lib$(str).so"
     elseif Sys.isapple()
         return "lib$(str).dylib"
     elseif Sys.iswindows()
         return "$(str).dll"
     end
-    error(
+    return error(
         "Unsupported operating system. Only 64-bit linux, OSX, and Windows " *
-        "are supported."
+        "are supported.",
     )
 end
 
@@ -38,7 +38,10 @@ function install_path()
     end
     open("deps.jl", "w") do io
         write(io, "const PATH_SOLVER = \"$(escape_string(local_filename))\"\n")
-        write(io, "const LUSOL_LIBRARY_PATH = \"$(escape_string(lusol_filename))\"\n")
+        return write(
+            io,
+            "const LUSOL_LIBRARY_PATH = \"$(escape_string(lusol_filename))\"\n",
+        )
     end
 end
 

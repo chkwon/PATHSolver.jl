@@ -14,14 +14,23 @@ MOI.Utilities.@model(
 )
 
 function MOI.supports_constraint(
-    ::Optimizer, ::Type{MOI.SingleVariable}, ::Type{S}
-) where {S <: Union{MOI.Semiinteger, MOI.Semicontinuous, MOI.ZeroOne, MOI.Integer}}
+    ::Optimizer,
+    ::Type{MOI.SingleVariable},
+    ::Type{S},
+) where {S<:Union{MOI.Semiinteger,MOI.Semicontinuous,MOI.ZeroOne,MOI.Integer}}
     return false
 end
 
 function MOI.supports(
-    ::Optimizer, ::MOI.ObjectiveFunction{F}
-) where {F<:Union{MOI.SingleVariable, MOI.ScalarAffineFunction, MOI.ScalarQuadraticFunction}}
+    ::Optimizer,
+    ::MOI.ObjectiveFunction{F},
+) where {
+    F<:Union{
+        MOI.SingleVariable,
+        MOI.ScalarAffineFunction,
+        MOI.ScalarQuadraticFunction,
+    },
+}
     return false
 end
 
@@ -31,7 +40,9 @@ struct Solution
     info::Information
 end
 
-solution(model::Optimizer) = get(model.ext, :solution, nothing)::Union{Nothing, Solution}
+function solution(model::Optimizer)
+    return get(model.ext, :solution, nothing)::Union{Nothing,Solution}
+end
 
 """
     Optimizer()
@@ -54,7 +65,7 @@ A full list of options can be found at http://pages.cs.wisc.edu/~ferris/path/opt
 function Optimizer()
     model = Optimizer{Float64}()
     model.ext[:silent] = false
-    model.ext[:kwargs] = Dict{Symbol, Any}()
+    model.ext[:kwargs] = Dict{Symbol,Any}()
     model.ext[:solution] = nothing
     return model
 end
@@ -80,13 +91,17 @@ end
 MOI.get(model::Optimizer, ::MOI.SolverName) = c_api_Path_Version()
 
 function MOI.supports(
-    ::Optimizer, ::MOI.VariablePrimalStart, ::Type{MOI.VariableIndex}
+    ::Optimizer,
+    ::MOI.VariablePrimalStart,
+    ::Type{MOI.VariableIndex},
 )
     return true
 end
 
 function MOI.get(
-    model::Optimizer, ::MOI.VariablePrimalStart, x::MOI.VariableIndex
+    model::Optimizer,
+    ::MOI.VariablePrimalStart,
+    x::MOI.VariableIndex,
 )
     initial = get(model.ext, :variable_primal_start, nothing)
     if initial === nothing
@@ -96,11 +111,14 @@ function MOI.get(
 end
 
 function MOI.set(
-    model::Optimizer, ::MOI.VariablePrimalStart, x::MOI.VariableIndex, value
+    model::Optimizer,
+    ::MOI.VariablePrimalStart,
+    x::MOI.VariableIndex,
+    value,
 )
     initial = get(model.ext, :variable_primal_start, nothing)
     if initial === nothing
-        model.ext[:variable_primal_start] = Dict{MOI.VariableIndex, Float64}()
+        model.ext[:variable_primal_start] = Dict{MOI.VariableIndex,Float64}()
         initial = model.ext[:variable_primal_start]
     end
     if value === nothing
@@ -119,8 +137,9 @@ function _F_linear_operator(model::Optimizer)
     for index in MOI.get(
         model,
         MOI.ListOfConstraintIndices{
-            MOI.VectorAffineFunction{Float64}, MOI.Complements
-        }()
+            MOI.VectorAffineFunction{Float64},
+            MOI.Complements,
+        }(),
     )
         Fi = MOI.get(model, MOI.ConstraintFunction(), index)
         Si = MOI.get(model, MOI.ConstraintSet(), index)
@@ -128,12 +147,12 @@ function _F_linear_operator(model::Optimizer)
         if 2 * Si.dimension != length(Fi.constants)
             error(
                 "Dimension of constant vector $(length(Fi.constants)) does not match the " *
-                "required dimension of the complementarity set $(2 * Si.dimension)."
+                "required dimension of the complementarity set $(2 * Si.dimension).",
             )
-        elseif any(i -> !iszero(Fi.constants[Si.dimension + i]), 1:Si.dimension)
+        elseif any(i -> !iszero(Fi.constants[Si.dimension+i]), 1:Si.dimension)
             error(
                 "VectorAffineFunction malformed: a constant associated with a " *
-                "complemented variable is not zero: $(Fi.constants[Si.dimension+1:end])."
+                "complemented variable is not zero: $(Fi.constants[Si.dimension+1:end]).",
             )
         end
 
@@ -146,7 +165,7 @@ function _F_linear_operator(model::Optimizer)
             elseif term.output_index > 2 * Si.dimension
                 error(
                     "VectorAffineFunction malformed: output_index $(term.output_index) " *
-                    "is too large."
+                    "is too large.",
                 )
             end
             dimension_i = term.output_index - Si.dimension
@@ -154,13 +173,13 @@ function _F_linear_operator(model::Optimizer)
             if rows[dimension_i] != 0 || has_term[row_i]
                 error(
                     "The variable $(term.scalar_term.variable_index) appears in more " *
-                    "than one complementarity constraint."
+                    "than one complementarity constraint.",
                 )
             elseif term.scalar_term.coefficient != 1.0
                 error(
                     "VectorAffineFunction malformed: variable " *
                     "$(term.scalar_term.variable_index) has a coefficient that is not 1 " *
-                    "in row $(term.output_index) of the VectorAffineFunction."
+                    "in row $(term.output_index) of the VectorAffineFunction.",
                 )
             end
             rows[dimension_i] = row_i
@@ -178,7 +197,7 @@ function _F_linear_operator(model::Optimizer)
             if iszero(row_i)
                 error(
                     "VectorAffineFunction malformed: expected variable in row " *
-                    "$(Si.dimension + term.output_index)."
+                    "$(Si.dimension + term.output_index).",
                 )
             end
             M[row_i, s_term.variable_index.value] += s_term.coefficient
@@ -214,26 +233,29 @@ function MOI.optimize!(model::Optimizer)
         upper,
         initial;
         silent = model.ext[:silent],
-        [k => v for (k, v) in model.ext[:kwargs]]...
+        [k => v for (k, v) in model.ext[:kwargs]]...,
     )
     model.ext[:solution] = Solution(status, x, info)
     return
 end
 
 const _MCP_TERMINATION_STATUS_MAP =
-    Dict{MCP_Termination, Tuple{MOI.TerminationStatusCode, String}}(
+    Dict{MCP_Termination,Tuple{MOI.TerminationStatusCode,String}}(
         MCP_Solved => (MOI.LOCALLY_SOLVED, "The problem was solved"),
         MCP_NoProgress => (MOI.SLOW_PROGRESS, "A stationary point was found"),
-        MCP_MajorIterationLimit => (MOI.ITERATION_LIMIT, "Major iteration limit met"),
-        MCP_MinorIterationLimit => (MOI.ITERATION_LIMIT, "Cumulative minor iterlim met"),
+        MCP_MajorIterationLimit =>
+            (MOI.ITERATION_LIMIT, "Major iteration limit met"),
+        MCP_MinorIterationLimit =>
+            (MOI.ITERATION_LIMIT, "Cumulative minor iterlim met"),
         MCP_TimeLimit => (MOI.TIME_LIMIT, "Ran out of time"),
         MCP_UserInterrupt => (MOI.INTERRUPTED, "Control-C, typically"),
         MCP_BoundError => (MOI.INVALID_MODEL, "Problem has a bound error"),
-        MCP_DomainError => (MOI.NUMERICAL_ERROR, "Could not find a starting point"),
+        MCP_DomainError =>
+            (MOI.NUMERICAL_ERROR, "Could not find a starting point"),
         MCP_Infeasible => (MOI.INFEASIBLE, "Problem has no solution"),
         MCP_Error => (MOI.OTHER_ERROR, "An error occured within the code"),
         MCP_LicenseError => (MOI.OTHER_ERROR, "License could not be found"),
-        MCP_OK => (MOI.OTHER_ERROR, "")
+        MCP_OK => (MOI.OTHER_ERROR, ""),
     )
 
 function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
@@ -257,7 +279,9 @@ function MOI.get(model::Optimizer, ::MOI.ResultCount)
 end
 
 function MOI.get(
-    model::Optimizer, attr::MOI.VariablePrimal, x::MOI.VariableIndex
+    model::Optimizer,
+    attr::MOI.VariablePrimal,
+    x::MOI.VariableIndex,
 )
     MOI.check_result_index_bounds(model, attr)
     return solution(model).x[x.value]

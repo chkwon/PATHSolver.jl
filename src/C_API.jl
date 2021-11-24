@@ -6,15 +6,20 @@ const INFINITY = 1e20
 ###
 
 function c_api_License_SetString(license::String)
-    return ccall((:License_SetString, PATH_SOLVER), Cint, (Ptr{Cchar},), license)
+    return ccall(
+        (:License_SetString, PATH_SOLVER),
+        Cint,
+        (Ptr{Cchar},),
+        license,
+    )
 end
 
 ###
 ### Output_Interface.h
 ###
 
-const c_api_Output_Log     = Cint(1 << 0)
-const c_api_Output_Status  = Cint(1 << 1)
+const c_api_Output_Log = Cint(1 << 0)
+const c_api_Output_Status = Cint(1 << 1)
 const c_api_Output_Listing = Cint(1 << 2)
 
 mutable struct OutputData
@@ -55,7 +60,10 @@ end
 
 function c_api_Output_SetInterface(o::OutputInterface)
     return ccall(
-        (:Output_SetInterface, PATH_SOLVER), Cvoid, (Ref{OutputInterface},), o
+        (:Output_SetInterface, PATH_SOLVER),
+        Cvoid,
+        (Ref{OutputInterface},),
+        o,
     )
 end
 
@@ -74,7 +82,6 @@ end
 
 Base.cconvert(::Type{Ptr{Cvoid}}, x::Options) = x
 Base.unsafe_convert(::Type{Ptr{Cvoid}}, x::Options) = x.ptr
-
 
 function c_api_Options_Create()
     ptr = ccall((:Options_Create, PATH_SOLVER), Ptr{Cvoid}, ())
@@ -95,7 +102,11 @@ end
 
 function c_api_Options_Read(o::Options, filename::String)
     return ccall(
-        (:Options_Read, PATH_SOLVER), Cvoid, (Ptr{Cvoid}, Ptr{Cchar}), o, filename
+        (:Options_Read, PATH_SOLVER),
+        Cvoid,
+        (Ptr{Cvoid}, Ptr{Cchar}),
+        o,
+        filename,
     )
 end
 
@@ -120,7 +131,9 @@ mutable struct InterfaceData
 end
 
 function _c_problem_size(
-    id_ptr::Ptr{Cvoid}, n_ptr::Ptr{Cint}, nnz_ptr::Ptr{Cint}
+    id_ptr::Ptr{Cvoid},
+    n_ptr::Ptr{Cint},
+    nnz_ptr::Ptr{Cint},
 )
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     n = unsafe_wrap(Array{Cint}, n_ptr, 1)
@@ -141,7 +154,7 @@ function _c_bounds(
     z = unsafe_wrap(Array{Cdouble}, z_ptr, n)
     lb = unsafe_wrap(Array{Cdouble}, lb_ptr, n)
     ub = unsafe_wrap(Array{Cdouble}, ub_ptr, n)
-    for i = 1:n
+    for i in 1:n
         z[i] = id_data.z[i]
         lb[i] = id_data.lb[i]
         ub[i] = id_data.ub[i]
@@ -150,7 +163,10 @@ function _c_bounds(
 end
 
 function _c_function_evaluation(
-    id_ptr::Ptr{Cvoid}, n::Cint, x_ptr::Ptr{Cdouble}, f_ptr::Ptr{Cdouble}
+    id_ptr::Ptr{Cvoid},
+    n::Cint,
+    x_ptr::Ptr{Cdouble},
+    f_ptr::Ptr{Cdouble},
 )
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     x = unsafe_wrap(Array{Cdouble}, x_ptr, n)
@@ -169,7 +185,7 @@ function _c_jacobian_evaluation(
     col_ptr::Ptr{Cint},
     len_ptr::Ptr{Cint},
     row_ptr::Ptr{Cint},
-    data_ptr::Ptr{Cdouble}
+    data_ptr::Ptr{Cdouble},
 )
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     x = unsafe_wrap(Array{Cdouble}, x_ptr, n)
@@ -192,7 +208,7 @@ function _c_variable_name(
     id_ptr::Ptr{Cvoid},
     i::Cint,
     buf_ptr::Ptr{UInt8},
-    buf_size::Cint
+    buf_size::Cint,
 )
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     name = collect(codeunits(id_data.variable_names[i]))
@@ -209,7 +225,7 @@ function _c_constraint_name(
     id_ptr::Ptr{Cvoid},
     i::Cint,
     buf_ptr::Ptr{UInt8},
-    buf_size::Cint
+    buf_size::Cint,
 )
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     name = collect(codeunits(id_data.constraint_names[i]))
@@ -221,8 +237,6 @@ function _c_constraint_name(
     end
     return
 end
-
-
 
 """
     MCP_Interface
@@ -268,8 +282,16 @@ mutable struct MCP_Interface
             _c_jacobian_evaluation,
             Cint,
             (
-                Ptr{Cvoid}, Cint, Ptr{Cdouble}, Cint, Ptr{Cdouble},
-                Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cint}, Ptr{Cdouble}
+                Ptr{Cvoid},
+                Cint,
+                Ptr{Cdouble},
+                Cint,
+                Ptr{Cdouble},
+                Ptr{Cint},
+                Ptr{Cint},
+                Ptr{Cint},
+                Ptr{Cint},
+                Ptr{Cdouble},
             )
         )
         if isempty(interface_data.variable_names)
@@ -288,8 +310,8 @@ mutable struct MCP_Interface
                 _c_constraint_name,
                 Cvoid,
                 (Ptr{Cvoid}, Cint, Ptr{Cuchar}, Cint)
-            )      
-        end            
+            )
+        end
 
         return new(
             pointer_from_objref(interface_data),
@@ -302,7 +324,7 @@ mutable struct MCP_Interface
             C_NULL,
             _C_VARIABLE_NAME,
             _C_CONSTRAINT_NAME,
-            C_NULL
+            C_NULL,
         )
     end
 end
@@ -310,7 +332,7 @@ end
 mutable struct MCP
     n::Int
     ptr::Ptr{Cvoid}
-    id_data::Union{Nothing, InterfaceData}
+    id_data::Union{Nothing,InterfaceData}
     function MCP(n::Int, ptr::Ptr{Cvoid})
         m = new(n, ptr, nothing)
         finalizer(c_api_MCP_Destroy, m)
@@ -339,7 +361,8 @@ function c_api_MCP_SetInterface(m::MCP, interface::MCP_Interface)
         (:MCP_SetInterface, PATH_SOLVER),
         Cvoid,
         (Ptr{Cvoid}, Ref{MCP_Interface}),
-        m, interface
+        m,
+        interface,
     )
     return
 end
@@ -419,16 +442,29 @@ mutable struct Information
     # Boolean used_basics;       /* Was the initial basis given used?            */
     used_basics::Bool
 
-    function Information(;
-        use_start::Bool = true,
-    )
+    function Information(; use_start::Bool = true)
         return new(
-            0.0, 0.0, 0.0, 0.0, 0.0,
-            0, 0, 0, 0, 0, 0, 0,
-            0, 0,
-            false, false, false,
-            use_start, false,
-            false, false
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            false,
+            false,
+            false,
+            use_start,
+            false,
+            false,
+            false,
         )
     end
 end
@@ -467,7 +503,11 @@ Returns a MCP_Termination status.
 """
 function c_api_Path_Solve(m::MCP, info::Information)
     return ccall(
-        (:Path_Solve, PATH_SOLVER), Cint, (Ptr{Cvoid}, Ref{Information}), m, info
+        (:Path_Solve, PATH_SOLVER),
+        Cint,
+        (Ptr{Cvoid}, Ref{Information}),
+        m,
+        info,
     )
 end
 
@@ -514,50 +554,59 @@ function solve_mcp(
     variable_names::Vector{String} = String[],
     constraint_names::Vector{String} = String[],
     silent::Bool = false,
-    kwargs...
+    kwargs...,
 )
     @assert length(z) == length(lb) == length(ub)
     out_io = silent ? IOBuffer() : stdout
     output_data = OutputData(out_io)
     GC.@preserve output_data begin
-    c_api_Output_SetInterface(OutputInterface(output_data))
+        c_api_Output_SetInterface(OutputInterface(output_data))
 
-    n = length(z)
-    if n == 0
-        return MCP_Solved, nothing, nothing
-    end
-
-    # Convert `Int` to `Float64` for check to avoid overflow.
-    dnnz = min(1.0 * nnz, 1.0 * n^2)
-    if dnnz > typemax(Cint)
-        return MCP_Error, nothing, nothing
-    end
-    nnz = Int(dnnz + 1)
-
-    o = c_api_Options_Create()
-    c_api_Path_AddOptions(o)
-    c_api_Options_Default(o)
-    m = c_api_MCP_Create(n, nnz)
-    m.id_data = InterfaceData(
-        Cint(n), Cint(nnz), 
-        F, J, lb, ub, z, 
-        variable_names, constraint_names
-    )
-    m_interface = MCP_Interface(m.id_data)
-    c_api_MCP_SetInterface(m, m_interface)
-    if length(kwargs) > 0
-        mktemp() do path, io
-            println(io, "* Automatically generated by PATH.jl. Do not edit.")
-            for (key, val) in kwargs
-                println(io, key, " ", val)
-            end
-            close(io)
-            c_api_Options_Read(o, path)
+        n = length(z)
+        if n == 0
+            return MCP_Solved, nothing, nothing
         end
-    end
-    c_api_Options_Display(o)
-    info = Information(use_start = true)
-    status = c_api_Path_Solve(m, info)
+
+        # Convert `Int` to `Float64` for check to avoid overflow.
+        dnnz = min(1.0 * nnz, 1.0 * n^2)
+        if dnnz > typemax(Cint)
+            return MCP_Error, nothing, nothing
+        end
+        nnz = Int(dnnz + 1)
+
+        o = c_api_Options_Create()
+        c_api_Path_AddOptions(o)
+        c_api_Options_Default(o)
+        m = c_api_MCP_Create(n, nnz)
+        m.id_data = InterfaceData(
+            Cint(n),
+            Cint(nnz),
+            F,
+            J,
+            lb,
+            ub,
+            z,
+            variable_names,
+            constraint_names,
+        )
+        m_interface = MCP_Interface(m.id_data)
+        c_api_MCP_SetInterface(m, m_interface)
+        if length(kwargs) > 0
+            mktemp() do path, io
+                println(
+                    io,
+                    "* Automatically generated by PATH.jl. Do not edit.",
+                )
+                for (key, val) in kwargs
+                    println(io, key, " ", val)
+                end
+                close(io)
+                return c_api_Options_Read(o, path)
+            end
+        end
+        c_api_Options_Display(o)
+        info = Information(use_start = true)
+        status = c_api_Path_Solve(m, info)
     end  # GC.@preserve
     X = c_api_MCP_GetX(m)
     # TODO(odow): I don't know why, but manually calling MCP_Destroy was
@@ -581,7 +630,7 @@ function _linear_function(M::AbstractMatrix, q::Vector)
     end
 end
 
-function _linear_jacobian(M::SparseArrays.SparseMatrixCSC{Cdouble, Cint})
+function _linear_jacobian(M::SparseArrays.SparseMatrixCSC{Cdouble,Cint})
     if size(M, 1) != size(M, 2)
         error("M not square! size = $(size(M))")
     end
@@ -592,14 +641,14 @@ function _linear_jacobian(M::SparseArrays.SparseMatrixCSC{Cdouble, Cint})
         col::Vector{Cint},
         len::Vector{Cint},
         row::Vector{Cint},
-        data::Vector{Cdouble}
+        data::Vector{Cdouble},
     ) -> begin
         @assert n == length(x) == length(col) == length(len) == size(M, 1)
         @assert nnz == length(row) == length(data)
         @assert nnz >= SparseArrays.nnz(M)
-        for i = 1:n
+        for i in 1:n
             col[i] = M.colptr[i]
-            len[i] = M.colptr[i + 1] - M.colptr[i]
+            len[i] = M.colptr[i+1] - M.colptr[i]
         end
         for (i, v) in enumerate(SparseArrays.rowvals(M))
             row[i] = v
@@ -634,12 +683,12 @@ prescribed lower and upper bounds.
 `z` is an initial starting point for the search.
 """
 function solve_mcp(
-    M::SparseArrays.SparseMatrixCSC{Cdouble, Cint},
+    M::SparseArrays.SparseMatrixCSC{Cdouble,Cint},
     q::Vector{Cdouble},
     lb::Vector{Cdouble},
     ub::Vector{Cdouble},
-    z::Vector{Cdouble};  
-    kwargs...
+    z::Vector{Cdouble};
+    kwargs...,
 )
     return solve_mcp(
         _linear_function(M, q),
@@ -648,6 +697,6 @@ function solve_mcp(
         ub,
         z;
         nnz = SparseArrays.nnz(M),
-        kwargs...
+        kwargs...,
     )
 end
