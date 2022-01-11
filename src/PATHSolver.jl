@@ -25,7 +25,7 @@ function __init__()
         ),
         "linux" => (
             "libpath50.so",
-            "a670c493d9aeead0aa46138b1ecd4352bfda6f286ed990d2c868dc4f0c7f245d",
+            "8c36baaea0952729788ec8d964253305b04b0289a1d74ca5606862c9ddb8f2fd",
         ),
     )
     libpath_filename, libpath_sha256 = libpath[platform]
