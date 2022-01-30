@@ -4,11 +4,13 @@ authors = ["Changhyun Kwon <chkwon@gmail.com>", "Oscar Dowson <o.dowson@gmail.co
 version = "1.2.0"
 
 [deps]
+DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
+DataDeps = "0.7"
 MathOptInterface = "0.10"
-julia = "1"
+julia = "1.6"

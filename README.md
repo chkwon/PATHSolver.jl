@@ -1,4 +1,4 @@
-**PATHSolver.jl was completely re-written between v0.6 and v1.0. It now uses PATH 
+**PATHSolver.jl was completely re-written between v0.6 and v1.0. It now uses PATH
 v5.0 binaries, and integrates directly into JuMP. At this point, PATHSolver.jl only supports modeling linear problems. For nonlinear problems, use [Complementarity.jl](https://github.com/chkwon/Complementarity.jl).**
 
 **To revert to the old API, use:**
@@ -121,5 +121,4 @@ is available directly from the [developers of that code for academic use](http:/
 
 By default `PATHSolver.jl` will download a copy of the `libpath` library. If you
 already have one installed and want to use that, set the `PATH_JL_LOCATION`
-environment variable to point to the `libpath50.xx` library, then run
-`Pkg.build("PATHSolver")`.
+environment variable to point to the `libpath50.xx` library.
