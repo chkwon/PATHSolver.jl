@@ -1,7 +1,7 @@
 name = "PATHSolver"
 uuid = "f5f7c340-0bb3-5c69-969a-41884d311d1b"
 authors = ["Changhyun Kwon <chkwon@gmail.com>", "Oscar Dowson <o.dowson@gmail.com>"]
-version = "1.3.0"
+version = "1.2.0"
 
 [deps]
 DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
