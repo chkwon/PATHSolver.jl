@@ -104,6 +104,12 @@ julia> termination_status(model)
 LOCALLY_SOLVED::TerminationStatusCode = 4
 ```
 
+## Thread safety
+
+PATH is not thread-safe and there are no known work-arounds. Do not run it in parallel
+using `Threads.@threads`. See [issue #62](https://github.com/chkwon/PATHSolver.jl/issues/62)
+for more details.
+
 ## Factorization methods
 
 By default, `PATHSolver.jl` will download the [LUSOL](https://web.stanford.edu/group/SOL/software/lusol/)
