@@ -104,6 +104,10 @@ julia> termination_status(model)
 LOCALLY_SOLVED::TerminationStatusCode = 4
 ```
 
+Note that options are set using `JuMP.set_optimizer_attribute`. 
+
+The list of options supported by PATH can be found here: https://pages.cs.wisc.edu/~ferris/path/options.pdf
+
 ## Thread safety
 
 PATH is not thread-safe and there are no known work-arounds. Do not run it in parallel
