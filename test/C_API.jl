@@ -15,6 +15,12 @@ function runtests()
     return
 end
 
+function check_info_sanity(info)
+    @test info.residual < 1e-5
+    @test iszero(info.restarts)
+    @test info.function_evaluations > 0
+end
+
 function test_CheckLicense()
     @test PATHSolver.c_api_License_SetString("bad_license") != 0
     @test PATHSolver.c_api_Path_CheckLicense(1, 1) > 0
@@ -47,6 +53,8 @@ function test_Example()
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
+    check_info_sanity(info)
+
     return
 end
 
@@ -73,6 +81,7 @@ function test_Example_LUSOL()
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
+    check_info_sanity(info)
     return
 end
 
@@ -134,6 +143,7 @@ function test_Example_II()
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [1.28475, 0.972916, 0.909376, 1.17304], atol = 1e-4)
+    check_info_sanity(info)
     return
 end
 
@@ -160,6 +170,7 @@ function test_Name()
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
+    check_info_sanity(info)
     status, z, info = PATHSolver.solve_mcp(
         M,
         Float64[2, 2, -2, -6],
@@ -177,6 +188,7 @@ function test_Name()
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
+    check_info_sanity(info)
     status, z, info = PATHSolver.solve_mcp(
         M,
         Float64[2, 2, -2, -6],
@@ -194,6 +206,7 @@ function test_Name()
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
+    check_info_sanity(info)
 end
 
 end
