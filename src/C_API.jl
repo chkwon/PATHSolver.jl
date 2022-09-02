@@ -393,31 +393,33 @@ end
 )
 
 mutable struct Information
-    # Double residual;	     /* Value of residual at final point             */
+    # Double residual;           /* Value of residual at final point             */
     residual::Cdouble
-    # Double distance;	     /* Distance between initial and final point     */
+    # Double distance;           /* Distance between initial and final point     */
     distance::Cdouble
-    # Double steplength;	     /* Steplength taken                             */
+    # Double steplength;         /* Steplength taken                             */
     steplength::Cdouble
-    # Double total_time;	     /* Amount of time spent in the code             */
+    # Double total_time;         /* Amount of time spent in the code             */
     total_time::Cdouble
+    # Double basis_time;         /* Amount of time spent factoring               */
+    basis_time::Cdouble
 
     # Double maximum_distance;   /* Maximum distance from init point allowed     */
     maximum_distance::Cdouble
 
-    # Int major_iterations;	     /* Major iterations taken                       */
+    # Int major_iterations;      /* Major iterations taken                       */
     major_iterations::Cint
-    # Int minor_iterations;	     /* Minor iterations taken                       */
-    mainor_iterations::Cint
-    # Int crash_iterations;	     /* Crash iterations taken                       */
+    # Int minor_iterations;      /* Minor iterations taken                       */
+    minor_iterations::Cint
+    # Int crash_iterations;      /* Crash iterations taken                       */
     crash_iterations::Cint
     # Int function_evaluations;  /* Function evaluations performed               */
     function_evaluations::Cint
     # Int jacobian_evaluations;  /* Jacobian evaluations performed               */
     jacobian_evaluations::Cint
-    # Int gradient_steps;	     /* Gradient steps taken                         */
+    # Int gradient_steps;        /* Gradient steps taken                         */
     gradient_steps::Cint
-    # Int restarts;		     /* Restarts used                                */
+    # Int restarts;              /* Restarts used                                */
     restarts::Cint
 
     # Int generate_output;       /* Mask where output can be displayed.          */
@@ -425,11 +427,11 @@ mutable struct Information
     # Int generated_output;      /* Mask where output displayed.                 */
     generated_output::Cint
 
-    # Boolean forward;	     /* Move forward?                                */
+    # Boolean forward;           /* Move forward?                                */
     forward::Bool
-    # Boolean backtrace;	     /* Back track?                                  */
+    # Boolean backtrace;         /* Back track?                                  */
     backtrace::Bool
-    # Boolean gradient;	     /* Take gradient step?                          */
+    # Boolean gradient;          /* Take gradient step?                          */
     gradient::Bool
 
     # Boolean use_start;         /* Use the starting point provided?             */
@@ -444,27 +446,28 @@ mutable struct Information
 
     function Information(; use_start::Bool = true)
         return new(
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            false,
-            false,
-            false,
-            use_start,
-            false,
-            false,
-            false,
+            0.0, # residual
+            0.0, # distance
+            0.0, # steplength
+            0.0, # total_time
+            0.0, # basis_time
+            0.0, # maximum_distance
+            0, # major_iterations
+            0, # minor_iterations
+            0, # crash_iterations
+            0, # function_evaluations
+            0, # jacobian_evaluations
+            0, # gradient_steps
+            0, # restarts
+            0, # generate_output
+            0, # generated_output
+            false, # forward
+            false, # backtrace
+            false, # gradient
+            use_start, # use_start
+            false, # use_basics
+            false, # used_start
+            false, # used_basics
         )
     end
 end
