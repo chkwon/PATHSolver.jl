@@ -444,7 +444,11 @@ mutable struct Information
     # Boolean used_basics;       /* Was the initial basis given used?            */
     used_basics::Bool
 
-    function Information(; use_start::Bool = true)
+    function Information(;
+        generate_output::Integer = 0,
+        use_start::Bool = true,
+        use_basics::Bool = false,
+    )
         return new(
             0.0, # residual
             0.0, # distance
@@ -459,13 +463,13 @@ mutable struct Information
             0, # jacobian_evaluations
             0, # gradient_steps
             0, # restarts
-            0, # generate_output
+            generate_output, # generate_output
             0, # generated_output
             false, # forward
             false, # backtrace
             false, # gradient
             use_start, # use_start
-            false, # use_basics
+            use_basics, # use_basics
             false, # used_start
             false, # used_basics
         )
@@ -529,6 +533,9 @@ end
         variable_name::Vector{String}=String[],
         constraint_name::Vector{String}=String[],        
         silent::Bool = false,
+        generate_output::Integer = 0,
+        use_start::Bool = true,
+        use_basics::Bool = false,
         kwargs...
     )
 
@@ -557,6 +564,9 @@ function solve_mcp(
     variable_names::Vector{String} = String[],
     constraint_names::Vector{String} = String[],
     silent::Bool = false,
+    generate_output::Integer = 0,
+    use_start::Bool = true,
+    use_basics::Bool = false,
     kwargs...,
 )
     @assert length(z) == length(lb) == length(ub)
@@ -608,7 +618,11 @@ function solve_mcp(
             end
         end
         c_api_Options_Display(o)
-        info = Information(use_start = true)
+        info = Information(;
+            generate_output = generate_output,
+            use_start = use_start,
+            use_basics = use_basics,
+        )
         status = c_api_Path_Solve(m, info)
     end  # GC.@preserve
     X = c_api_MCP_GetX(m)
@@ -669,7 +683,7 @@ end
         q::Vector{Cdouble},
         lb::Vector{Cdouble},
         ub::Vector{Cdouble},
-        z::Vector{Cdouble};    
+        z::Vector{Cdouble};
         kwargs...
     )
 
