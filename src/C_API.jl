@@ -445,7 +445,7 @@ mutable struct Information
     used_basics::Bool
 
     function Information(;
-        generate_output::Int = 0,
+        generate_output::Integer = 0,
         use_start::Bool = true,
         use_basics::Bool = false,
     )
@@ -533,6 +533,9 @@ end
         variable_name::Vector{String}=String[],
         constraint_name::Vector{String}=String[],        
         silent::Bool = false,
+        generate_output::Integer = 0,
+        use_start::Bool = true,
+        use_basics::Bool = false,
         kwargs...
     )
 
@@ -561,9 +564,9 @@ function solve_mcp(
     variable_names::Vector{String} = String[],
     constraint_names::Vector{String} = String[],
     silent::Bool = false,
-    generate_output = 0,
-    use_start = true,
-    use_basics = false,
+    generate_output::Integer = 0,
+    use_start::Bool = true,
+    use_basics::Bool = false,
     kwargs...,
 )
     @assert length(z) == length(lb) == length(ub)
