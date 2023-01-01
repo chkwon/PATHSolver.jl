@@ -348,6 +348,28 @@ function c_api_MCP_Create(n::Int, nnz::Int)
     return MCP(n, ptr)
 end
 
+function c_api_MCP_Jacobian_Structure_Constant(m::MCP, flag::Bool)
+    ccall(
+        (:MCP_Jacobian_Structure_Constant, PATH_SOLVER),
+        Cvoid,
+        (Ptr{Cvoid}, Cint),
+        m,
+        flag,
+    )
+    return
+end
+
+function c_api_MCP_Jacobian_Data_Contiguous(m::MCP, flag::Bool)
+    ccall(
+        (:MCP_Jacobian_Data_Contiguous, PATH_SOLVER),
+        Cvoid,
+        (Ptr{Cvoid}, Cint),
+        m,
+        flag,
+    )
+    return
+end
+
 function c_api_MCP_Destroy(m::MCP)
     if m.ptr === C_NULL
         return
@@ -610,6 +632,9 @@ for i in 1:n
 end
 ```
 
+To improve performance, see the `jacobian_structure_constant` and
+`jacobian_data_contiguous` keyword arguments.
+
 ## Other positional arguments
 
  * `lb`: a vector of the variable lower bounds
@@ -634,6 +659,14 @@ end
  * `use_start`: set `use_start = false` to disable the use of the startint point
    `z`.
  * `use_basics`: set `use_basics = true` to use the basis provided.
+ * `jacobian_structure_constant`: if `true`, the sparsity pattern of the
+   Jacobian matrix must be constant between evaluations. You can improve
+   performance by setting this to `true` and filling the `col`, `len` and `row`
+   on the first evaluation only.
+ * `jacobian_data_contiguous`: if `true`, the Jacobian data is stored
+   contiguously from `1..nnz` in the `row` and `data` arrays of the Jacobian
+   callback. In most cases, you can improve performance by settinng this to
+   `true`. It is `false` by default for the general case.
  * `kwargs`: other options passed to directly to PATH.
 """
 function solve_mcp(
@@ -649,6 +682,8 @@ function solve_mcp(
     generate_output::Integer = 0,
     use_start::Bool = true,
     use_basics::Bool = false,
+    jacobian_structure_constant::Bool = false,
+    jacobian_data_contiguous::Bool = false,
     kwargs...,
 )
     @assert length(z) == length(lb) == length(ub)
@@ -673,6 +708,12 @@ function solve_mcp(
         c_api_Path_AddOptions(o)
         c_api_Options_Default(o)
         m = c_api_MCP_Create(n, nnz)
+        if jacobian_structure_constant
+            c_api_MCP_Jacobian_Structure_Constant(m, true)
+        end
+        if jacobian_data_contiguous
+            c_api_MCP_Jacobian_Data_Contiguous(m, true)
+        end
         m.id_data = InterfaceData(
             Cint(n),
             Cint(nnz),

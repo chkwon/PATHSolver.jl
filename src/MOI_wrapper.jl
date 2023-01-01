@@ -230,6 +230,8 @@ function MOI.optimize!(model::Optimizer)
         upper,
         initial;
         silent = model.ext[:silent],
+        jacobian_structure_constant = true,
+        jacobian_data_contiguous = true,
         [k => v for (k, v) in model.ext[:kwargs]]...,
     )
     model.ext[:solution] = Solution(status, x, info)
