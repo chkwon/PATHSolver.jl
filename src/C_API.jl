@@ -531,7 +531,7 @@ end
         z::Vector{Cdouble};
         nnz::Int = length(lb)^2,
         variable_name::Vector{String}=String[],
-        constraint_name::Vector{String}=String[],        
+        constraint_name::Vector{String}=String[],
         silent::Bool = false,
         generate_output::Integer = 0,
         use_start::Bool = true,
@@ -549,10 +549,92 @@ for each i, at least one of the following hold:
 where F is a given function from R^n to R^n, and lb and ub are prescribed
 lower and upper bounds.
 
-`z` is an initial starting point for the search.
+## The `F` argument
 
-`F` is a function `F(n::Cint, x::Vector{Cdouble}, f::Vector{Cdouble})` that
-should calculate the function F(x) and store the result in `f`.
+`F` is a function that calculates the value of function ``F(x)`` and stores the
+result in `f`. It must have the signature:
+```julia
+function F(n::Cint, x::Vector{Cdouble}, f::Vector{Cdouble})
+    for i in 1:n
+        f[i] = ... do stuff ...
+    end
+    return Cint(0)
+end
+```
+
+
+## The `J` argument
+
+`J` is a function that calculates the Jacobiann of the function ``F(x)``. The
+Jacobian is a square sparse matrix. It must have the signature:
+```julia
+function J(
+    n::Cint,
+    nnz::Cint,
+    x::Vector{Cdouble},
+    col::Vector{Cint},
+    len::Vector{Cint},
+    row::Vector{Cint},
+    data::Vector{Cdouble},
+)
+    # ...
+    return Cint(0)
+end
+```
+where:
+
+ * `n` is the number of variables (which is also the number rows and columns in
+   the Jacobian matrix).
+ * `nnz` is the maximum number of non-zero terms in the Jacobian. This value is
+   chosen by the user as the `nnz` argumennt to `solve_mcp`.
+ * `x` is the value of the decision variables at which to evaluate the Jacobian.
+
+The remainning arguments, `col`, `len`, `row`, and `data`, specifiy a sparse
+column representation of the Jacobian matrix. These must be filled in by your
+function.
+
+ * `col` is a length `n` vector, where `col[i]` is the 1-indexed position of the
+   start of the non-zeros in column `i` in the `data` vector.
+ * `len` is a length `n` vector, where `len[i]` is the number of non-zeros in
+   column `i`.
+
+Together, `col` and `len` can be used to form a range of indices in `row` and
+`data` corresponding to the non-zero elements of column `i` in the Jacobian.
+Thus, we can iterate over the non-zeros in the Jacobian using:
+```julia
+for i in 1:n
+    for k in (col[i]):(col[i] + len[i] - 1)
+        row[k] = ... the 1-indexed row of the k'th non-zero in the Jacobian
+        data[k] = ... the value of the k'th non-zero in the Jacobian
+    end
+end
+```
+
+## Other positional arguments
+
+ * `lb`: a vector of the variable lower bounds
+ * `ub`: a vector of the variable upper bounds
+ * `z`: an initial starting point for the search. You can disable this by
+   passing an empty vector and settig `use_start = false`
+
+## Keyword arguments
+
+ * `nnz`: the maximum number of non-zeros in the Jacobian matrix. If not
+   specified if defaults to the dense estimate of `n^2` where `n` is the number
+   of variables.
+ * `variable_name`: a vector of variable names. This can improve the legibility
+   of the output printed by PATH, particularly if there are issues associated
+   with a particular variable.
+ * `constraint_name`: a vector of constraint names. This can improve the
+   legibility of the output printed by PATH, particularly if there are issues
+   associated with a particular row of the `F` function.
+ * `silent`: set `silent = true` to disable printing.
+ * `generate_output`: an integer mask passed to the C API of PATH to dictate
+   with output can be displayed.
+ * `use_start`: set `use_start = false` to disable the use of the startint point
+   `z`.
+ * `use_basics`: set `use_basics = true` to use the basis provided.
+ * `kwargs`: other options passed to directly to PATH.
 """
 function solve_mcp(
     F::Function,
