@@ -295,3 +295,7 @@ function MOI.get(model::Optimizer, attr::MOI.PrimalStatus)
 end
 
 MOI.get(::Optimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
+
+function MOI.get(model::Optimizer, ::MOI.SolveTimeSec)
+    return solution(model).info.total_time
+end
