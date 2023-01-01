@@ -1,21 +1,21 @@
-**PATHSolver.jl was completely re-written between v0.6 and v1.0. It now uses PATH
-v5.0 binaries, and integrates directly into JuMP. At this point, PATHSolver.jl only supports modeling linear problems. For nonlinear problems, use [Complementarity.jl](https://github.com/chkwon/Complementarity.jl).**
-
-**To revert to the old API, use:**
-```julia
-import Pkg
-Pkg.add(Pkg.PackageSpec(name = "PATHSolver", version = v"0.6.2"))
-```
-**Then restart Julia for the change to take effect. The old documentation and
-source code is available [on the `path-solver-v0` branch](https://github.com/chkwon/PATHSolver.jl/tree/path-solver-v0).**
-
-
 # PATHSolver.jl
-
-A Julia interface to the [PATH solver](http://pages.cs.wisc.edu/~ferris/path.html).
 
 [![Build Status](https://github.com/chkwon/PATHSolver.jl/workflows/CI/badge.svg?branch=master)](https://github.com/chkwon/PATHSolver.jl/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/chkwon/PATHSolver.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/chkwon/PATHSolver.jl)
+
+`PATHSolver.jl` is a wrapper for the [PATH solver](http://pages.cs.wisc.edu/~ferris/path.html).
+
+The wrapper has two components:
+
+ * a thin wrapper around the C API
+ * an interface to [MathOptInterface](https://github.com/jump-dev/MathOptInterface.jl)
+
+You can solve any complementarity problem using the wrapper around the C API,
+although you must manually provide the callback functions, including the
+Jacobian.
+
+The MathOptInterface wrapper is more limited, supporting only linear
+complementarity problems, but it enables PATHSolver to be used with [JuMP](https://github.com/jump-dev/JuMP.jl).
 
 ## Installation
 
@@ -23,6 +23,7 @@ Install `PATHSolver.jl` as follows:
 ```julia
 import Pkg; Pkg.add("PATHSolver")
 ```
+
 By default, `PATHSolver.jl` will download a copy of the underlying PATH solver.
 To use a different version of PATH, see the Manual Installation section below.
 
@@ -42,7 +43,7 @@ PATHSolver.c_api_License_SetString("<LICENSE STRING>")
 ```
 where `<LICENSE STRING>` is replaced by the current license string.
 
-## Example usage
+## Use with JuMP
 
 ```julia
 julia> using JuMP, PATHSolver
@@ -104,15 +105,134 @@ julia> termination_status(model)
 LOCALLY_SOLVED::TerminationStatusCode = 4
 ```
 
-Note that options are set using `JuMP.set_optimizer_attribute`. 
+Note that options are set using `JuMP.set_optimizer_attribute`.
 
 The list of options supported by PATH can be found here: https://pages.cs.wisc.edu/~ferris/path/options.pdf
 
+## Use with the C API
+
+`PATHSolver.jl` wraps the PATH C API using `PATHSolver.c_api_XXX` for the C
+method `XXX`. However, using the C API directly from Julia can be challenging,
+particularly with respect to avoiding issues with Julia's garbage collector.
+
+Instead, we recommend that you use the `PATHSolver.solve_mcp` function, which
+wrappers the C API into a single call. See the docstring of `PATHSolver.solve_mcp`
+for a detailed description of the arguments.
+
+Here is the same example using `PATHSolver.solve_mcp`. Note that you must
+manually construct the sparse Jacobian callback.
+
+```julia
+julia> using PATHSolver
+
+julia> M = [
+           0  0 -1 -1
+           0  0  1 -2
+           1 -1  2 -2
+           1  2 -2  4
+       ]
+4×4 Matrix{Int64}:
+ 0   0  -1  -1
+ 0   0   1  -2
+ 1  -1   2  -2
+ 1   2  -2   4
+
+julia> q = [2, 2, -2, -6]
+4-element Vector{Int64}:
+  2
+  2
+ -2
+ -6
+
+julia> function F(n::Cint, x::Vector{Cdouble}, f::Vector{Cdouble})
+           @assert n == length(x) == length(f)
+           f .= M * x .+ q
+           return Cint(0)
+       end
+F (generic function with 1 method)
+
+julia> function J(
+           n::Cint,
+           nnz::Cint,
+           x::Vector{Cdouble},
+           col::Vector{Cint},
+           len::Vector{Cint},
+           row::Vector{Cint},
+           data::Vector{Cdouble},
+       )
+           @assert n == length(x) == length(col) == length(len) == 4
+           @assert nnz == length(row) == length(data)
+           i = 1
+           for c in 1:n
+               col[c], len[c] = i, 0
+               for r in 1:n
+                   if !iszero(M[r, c])
+                       row[i], data[i] = r, M[r, c]
+                       len[c] += 1
+                       i += 1
+                   end
+               end
+           end
+           return Cint(0)
+       end
+J (generic function with 1 method)
+
+julia> status, z, info = PATHSolver.solve_mcp(
+           F,
+           J,
+           fill(0.0, 4),  # Lower bounds
+           fill(Inf, 4),  # Upper bounds
+           fill(0.0, 4);  # Starting point
+           nnz = 12,      # Number of nonzeros in the Jacobian
+           output = "yes",
+       )
+Reading options file /var/folders/bg/dzq_hhvx1dxgy6gb5510pxj80000gn/T/jl_iftYBS
+ > output yes
+Read of options file complete.
+
+Path 5.0.03 (Fri Jun 26 09:58:07 2020)
+Written by Todd Munson, Steven Dirkse, Youngdae Kim, and Michael Ferris
+
+Crash Log
+major  func  diff  size  residual    step       prox   (label)
+    0     0             1.2649e+01             0.0e+00 (f[    4])
+    1     2     4     2 1.0535e+01  8.0e-01    0.0e+00 (f[    1])
+    2     3     2     4 8.4815e-01  1.0e+00    0.0e+00 (f[    4])
+    3     4     0     3 4.4409e-16  1.0e+00    0.0e+00 (f[    3])
+pn_search terminated: no basis change.
+
+Major Iteration Log
+major minor  func  grad  residual    step  type prox    inorm  (label)
+    0     0     5     4 4.4409e-16           I 0.0e+00 4.4e-16 (f[    3])
+
+Major Iterations. . . . 0
+Minor Iterations. . . . 0
+Restarts. . . . . . . . 0
+Crash Iterations. . . . 3
+Gradient Steps. . . . . 0
+Function Evaluations. . 5
+Gradient Evaluations. . 4
+Basis Time. . . . . . . 0.000016
+Total Time. . . . . . . 0.044383
+Residual. . . . . . . . 4.440892e-16
+(PATHSolver.MCP_Solved, [2.8, 0.0, 0.8, 1.2], PATHSolver.Information(4.4408920985006247e-16, 0.0, 0.0, 0.044383, 1.6e-5, 0.0, 0, 0, 3, 5, 4, 0, 0, 0, 0, false, false, false, true, false, false, false))
+
+julia> status
+MCP_Solved::MCP_Termination = 1
+
+julia> z
+4-element Vector{Float64}:
+ 2.8
+ 0.0
+ 0.8
+ 1.2
+```
+
 ## Thread safety
 
-PATH is not thread-safe and there are no known work-arounds. Do not run it in parallel
-using `Threads.@threads`. See [issue #62](https://github.com/chkwon/PATHSolver.jl/issues/62)
-for more details.
+PATH is not thread-safe and there are no known work-arounds. Do not run it in
+parallel using `Threads.@threads`. See
+[issue #62](https://github.com/chkwon/PATHSolver.jl/issues/62) for more details.
 
 ## Factorization methods
 
