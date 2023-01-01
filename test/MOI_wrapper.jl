@@ -236,6 +236,7 @@ function test_Example_I()
     @test MOI.get(model, MOI.RawStatusString()) == "The problem was solved"
     x_val = MOI.get.(model, MOI.VariablePrimal(), x)
     @test isapprox(x_val, [2.8, 0.0, 0.8, 1.2])
+    @test 0 <= MOI.get(model, MOI.SolveTimeSec()) < 1
     return
 end
 
