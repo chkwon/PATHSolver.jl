@@ -375,7 +375,7 @@ mutable struct MCP
     id_data::Union{Nothing,InterfaceData}
     presolve_data::Union{Nothing,PresolveData}
     function MCP(n::Int, ptr::Ptr{Cvoid})
-        m = new(n, ptr, nothing)
+        m = new(n, ptr, nothing, nothing)
         finalizer(c_api_MCP_Destroy, m)
         return m
     end
