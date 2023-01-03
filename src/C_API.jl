@@ -115,6 +115,46 @@ function c_api_Path_AddOptions(o::Options)
 end
 
 ###
+### Presolve_Interface.h
+###
+
+const PRESOLVE_LINEAR = 0
+const PRESOLVE_NONLINEAR = 1
+
+mutable struct PresolveData
+    jac_typ::Function
+end
+
+function _c_jac_typ(data_ptr::Ptr{Cvoid}, nnz::Cint, typ_ptr::Ptr{Cint})
+    data = unsafe_pointer_to_objref(data_ptr)::PresolveData
+    typ = unsafe_wrap(Array{Cint}, typ_ptr, nnz)
+    data.jac_typ(nnz, typ)
+    return
+end
+
+mutable struct Presolve_Interface
+    presolve_data::Ptr{Cvoid}
+    start_pre::Ptr{Cvoid}
+    start_post::Ptr{Cvoid}
+    finish_pre::Ptr{Cvoid}
+    finish_post::Ptr{Cvoid}
+    jac_typ::Ptr{Cvoid}
+    con_typ::Ptr{Cvoid}
+
+    function Presolve_Interface(presolve_data::PresolveData)
+        return new(
+            pointer_from_objref(presolve_data),
+            C_NULL,
+            C_NULL,
+            C_NULL,
+            C_NULL,
+            @cfunction(_c_jac_typ, Cvoid, (Ptr{Cvoid}, Cint, Ptr{Cint})),
+            C_NULL,
+        )
+    end
+end
+
+###
 ### MCP_Interface.h
 ###
 
@@ -333,8 +373,9 @@ mutable struct MCP
     n::Int
     ptr::Ptr{Cvoid}
     id_data::Union{Nothing,InterfaceData}
+    presolve_data::Union{Nothing,PresolveData}
     function MCP(n::Int, ptr::Ptr{Cvoid})
-        m = new(n, ptr, nothing)
+        m = new(n, ptr, nothing, nothing)
         finalizer(c_api_MCP_Destroy, m)
         return m
     end
@@ -383,6 +424,17 @@ function c_api_MCP_SetInterface(m::MCP, interface::MCP_Interface)
         (:MCP_SetInterface, PATH_SOLVER),
         Cvoid,
         (Ptr{Cvoid}, Ref{MCP_Interface}),
+        m,
+        interface,
+    )
+    return
+end
+
+function c_api_MCP_SetPresolveInterface(m::MCP, interface::Presolve_Interface)
+    ccall(
+        (:MCP_SetPresolveInterface, PATH_SOLVER),
+        Cvoid,
+        (Ptr{Cvoid}, Ref{Presolve_Interface}),
         m,
         interface,
     )
@@ -558,6 +610,9 @@ end
         generate_output::Integer = 0,
         use_start::Bool = true,
         use_basics::Bool = false,
+        jacobian_structure_constant::Bool = false,
+        jacobian_data_contiguous::Bool = false,
+        jacobian_linear_elements::Vector{Int} = Int[],
         kwargs...
     )
 
@@ -583,7 +638,6 @@ function F(n::Cint, x::Vector{Cdouble}, f::Vector{Cdouble})
     return Cint(0)
 end
 ```
-
 
 ## The `J` argument
 
@@ -667,6 +721,10 @@ To improve performance, see the `jacobian_structure_constant` and
    contiguously from `1..nnz` in the `row` and `data` arrays of the Jacobian
    callback. In most cases, you can improve performance by settinng this to
    `true`. It is `false` by default for the general case.
+ * `jacobian_linear_elements`: a vector of the 1-indexed indices of the Jacobian
+   `data` array that appear linearly in the Jacobian, that is, their value is
+   independent of the point `x` at which the Jacobian is evaluated. If you set
+   this option, you must also set `jacobian_structure_constant = true`.
  * `kwargs`: other options passed to directly to PATH.
 """
 function solve_mcp(
@@ -684,6 +742,7 @@ function solve_mcp(
     use_basics::Bool = false,
     jacobian_structure_constant::Bool = false,
     jacobian_data_contiguous::Bool = false,
+    jacobian_linear_elements::Vector{Int} = Int[],
     kwargs...,
 )
     @assert length(z) == length(lb) == length(ub)
@@ -727,6 +786,16 @@ function solve_mcp(
         )
         m_interface = MCP_Interface(m.id_data)
         c_api_MCP_SetInterface(m, m_interface)
+        if jacobian_structure_constant && !isempty(jacobian_linear_elements)
+            m.presolve_data = PresolveData() do nnz, types
+                for i in jacobian_linear_elements
+                    types[i] = PRESOLVE_LINEAR
+                end
+                return
+            end
+            presolve_interface = Presolve_Interface(m.presolve_data)
+            c_api_MCP_SetPresolveInterface(m, presolve_interface)
+        end
         if length(kwargs) > 0
             mktemp() do path, io
                 println(
@@ -830,13 +899,17 @@ function solve_mcp(
     z::Vector{Cdouble};
     kwargs...,
 )
+    nnz = SparseArrays.nnz(M)
     return solve_mcp(
         _linear_function(M, q),
         _linear_jacobian(M),
         lb,
         ub,
         z;
-        nnz = SparseArrays.nnz(M),
+        nnz = nnz,
+        jacobian_structure_constant = true,
+        jacobian_data_contiguous = true,
+        jacobian_linear_elements = collect(1:nnz),
         kwargs...,
     )
 end
