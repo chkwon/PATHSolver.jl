@@ -755,14 +755,9 @@ function solve_mcp(
         if n == 0
             return MCP_Solved, nothing, nothing
         end
-
-        # Convert `Int` to `Float64` for check to avoid overflow.
-        dnnz = min(1.0 * nnz, 1.0 * n^2)
-        if dnnz > typemax(Cint)
+        if nnz > typemax(Cint)
             return MCP_Error, nothing, nothing
         end
-        nnz = Int(dnnz + 1)
-
         o = c_api_Options_Create()
         c_api_Path_AddOptions(o)
         c_api_Options_Default(o)

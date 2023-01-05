@@ -131,6 +131,7 @@ function test_Example_II()
                 end
             end
         end
+        @test sum(len) == nnz
         return Cint(0)
     end
     status, z, info = PATHSolver.solve_mcp(
@@ -140,6 +141,7 @@ function test_Example_II()
         fill(10.0, 4),
         [1.0, 1.0, 1.0, 1.0];
         output = "yes",
+        nnz = 12,
     )
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [1.28475, 0.972916, 0.909376, 1.17304], atol = 1e-4)
