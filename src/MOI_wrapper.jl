@@ -204,6 +204,8 @@ function _F_linear_operator(model::Optimizer)
     return M, q
 end
 
+_finite(x, y) = isfinite(x) ? x : y
+
 function _bounds_and_starting(model::Optimizer)
     x = MOI.get(model, MOI.ListOfVariableIndices())
     lower = fill(-INFINITY, length(x))
@@ -214,7 +216,7 @@ function _bounds_and_starting(model::Optimizer)
         z = MOI.get(model, MOI.VariablePrimalStart(), xi)
         lower[i] = l
         upper[i] = u
-        initial[i] = z !== nothing ? z : 0.5 * (l + u)
+        initial[i] = something(z, _finite(l, _finite(u, 0.0)))
     end
     return lower, upper, initial
 end

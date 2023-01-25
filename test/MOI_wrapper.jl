@@ -192,7 +192,7 @@ function test_variable_in_multiple_constraints()
     return
 end
 
-function test_Example_I()
+function _test_Example_I(use_primal_start::Bool)
     model = PATHSolver.Optimizer()
     MOI.set(model, MOI.RawOptimizerAttribute("time_limit"), 60)
     @test MOI.supports(model, MOI.Silent()) == true
@@ -203,7 +203,9 @@ function test_Example_I()
     @test MOI.supports(model, MOI.VariablePrimalStart(), MOI.VariableIndex)
     @test MOI.get(model, MOI.VariablePrimalStart(), x[1]) === nothing
     MOI.add_constraint.(model, x, MOI.Interval(0.0, 10.0))
-    MOI.set.(model, MOI.VariablePrimalStart(), x, 0.0)
+    if use_primal_start
+        MOI.set.(model, MOI.VariablePrimalStart(), x, 0.0)
+    end
     M = Float64[
         0 0 -1 -1
         0 0 1 -2
@@ -239,6 +241,10 @@ function test_Example_I()
     @test 0 <= MOI.get(model, MOI.SolveTimeSec()) < 1
     return
 end
+
+test_Example_I() = _test_Example_I(true)
+
+test_Example_I_no_start() = _test_Example_I(false)
 
 # An implementation of the GAMS model transmcp.gms: transporation model
 # as an equilibrium problem.
