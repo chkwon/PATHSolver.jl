@@ -192,7 +192,7 @@ function test_variable_in_multiple_constraints()
     return
 end
 
-function _test_Example_I(; use_primal_start::Bool)
+function _test_Example_I(use_primal_start::Bool)
     model = PATHSolver.Optimizer()
     MOI.set(model, MOI.RawOptimizerAttribute("time_limit"), 60)
     @test MOI.supports(model, MOI.Silent()) == true
