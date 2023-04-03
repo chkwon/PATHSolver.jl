@@ -123,6 +123,27 @@ Note that options are set using `JuMP.set_optimizer_attribute`.
 
 The list of options supported by PATH can be found here: https://pages.cs.wisc.edu/~ferris/path/options.pdf
 
+## MathOptInterface API
+
+The Path 5.0.03 optimizer supports the following constraints and attributes.
+
+List of supported variable types:
+
+ * [`MOI.Reals`](@ref)
+
+List of supported constraint types:
+
+ * [`MOI.VariableIndex`](@ref) in [`MOI.EqualTo{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.Interval{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.LessThan{Float64}`](@ref)
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.Complements`](@ref)
+
+List of supported model attributes:
+
+ * [`MOI.Name()`](@ref)
+ * [`MOI.ObjectiveSense()`](@ref)
+
 ## Use with the C API
 
 `PATHSolver.jl` wraps the PATH C API using `PATHSolver.c_api_XXX` for the C
