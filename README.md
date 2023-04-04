@@ -279,7 +279,7 @@ set_optimizer_attribute(model, "factorization_method", "blu_lusol")
 set_optimizer_attribute(model, "factorization_library_name", PATHSolver.LUSOL_LIBRARY_PATH)
 ```
 
-To use `factorization_method umfpack` you will need the umfpack shared lib that
+To use `factorization_method umfpack` you will need the `umfpack` shared library that
 is available directly from the [developers of that code for academic use](http://faculty.cse.tamu.edu/davis/suitesparse.html).
 
 ## Manual installation
