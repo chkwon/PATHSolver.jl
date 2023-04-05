@@ -3,7 +3,8 @@
 [![Build Status](https://github.com/chkwon/PATHSolver.jl/workflows/CI/badge.svg?branch=master)](https://github.com/chkwon/PATHSolver.jl/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/chkwon/PATHSolver.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/chkwon/PATHSolver.jl)
 
-`PATHSolver.jl` is a wrapper for the [PATH solver](http://pages.cs.wisc.edu/~ferris/path.html).
+[PATHSolver.jl](https://github.com/chkwon/PATHSolver.jl) is a wrapper for the
+[PATH solver](http://pages.cs.wisc.edu/~ferris/path.html).
 
 The wrapper has two components:
 
@@ -17,17 +18,19 @@ Jacobian.
 The MathOptInterface wrapper is more limited, supporting only linear
 complementarity problems, but it enables PATHSolver to be used with [JuMP](https://github.com/jump-dev/JuMP.jl).
 
-## Installation
+## Affiliation
 
-Install `PATHSolver.jl` as follows:
-```julia
-import Pkg; Pkg.add("PATHSolver")
-```
-
-By default, `PATHSolver.jl` will download a copy of the underlying PATH solver.
-To use a different version of PATH, see the Manual Installation section below.
+This wrapper is maintained by the JuMP community and is not an official wrapper
+of PATH. However, we are in close contact with the PATH developers, and they
+have given us permission to re-distribute the PATH binaries for automatic
+installation.
 
 ## License
+
+`PATHSolver.jl` is licensed under the [MIT License](https://github.com/chkwon/PATHSolver.jl/blob/master/LICENSE.md).
+
+The underlying solver, [path](https://pages.cs.wisc.edu/~ferris/path.html) is
+closed source and requires a license.
 
 Without a license, the PATH Solver can solve problem instances up to with up
 to 300 variables and 2000 non-zeros. For larger problems,
@@ -42,6 +45,17 @@ using PATHSolver
 PATHSolver.c_api_License_SetString("<LICENSE STRING>")
 ```
 where `<LICENSE STRING>` is replaced by the current license string.
+
+## Installation
+
+Install `PATHSolver.jl` as follows:
+```julia
+import Pkg
+Pkg.add("PATHSolver")
+```
+
+By default, `PATHSolver.jl` will download a copy of the underlying PATH solver.
+To use a different version of PATH, see the Manual Installation section below.
 
 ## Use with JuMP
 
@@ -108,6 +122,27 @@ LOCALLY_SOLVED::TerminationStatusCode = 4
 Note that options are set using `JuMP.set_optimizer_attribute`.
 
 The list of options supported by PATH can be found here: https://pages.cs.wisc.edu/~ferris/path/options.pdf
+
+## MathOptInterface API
+
+The Path 5.0.03 optimizer supports the following constraints and attributes.
+
+List of supported variable types:
+
+ * [`MOI.Reals`](@ref)
+
+List of supported constraint types:
+
+ * [`MOI.VariableIndex`](@ref) in [`MOI.EqualTo{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.Interval{Float64}`](@ref)
+ * [`MOI.VariableIndex`](@ref) in [`MOI.LessThan{Float64}`](@ref)
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.Complements`](@ref)
+
+List of supported model attributes:
+
+ * [`MOI.Name()`](@ref)
+ * [`MOI.ObjectiveSense()`](@ref)
 
 ## Use with the C API
 
@@ -244,7 +279,7 @@ set_optimizer_attribute(model, "factorization_method", "blu_lusol")
 set_optimizer_attribute(model, "factorization_library_name", PATHSolver.LUSOL_LIBRARY_PATH)
 ```
 
-To use `factorization_method umfpack` you will need the umfpack shared lib that
+To use `factorization_method umfpack` you will need the `umfpack` shared library that
 is available directly from the [developers of that code for academic use](http://faculty.cse.tamu.edu/davis/suitesparse.html).
 
 ## Manual installation

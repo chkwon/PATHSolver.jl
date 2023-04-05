@@ -16,21 +16,30 @@ MOI.Utilities.@model(
 function MOI.supports_constraint(
     ::Optimizer,
     ::Type{MOI.VariableIndex},
-    ::Type{S},
-) where {S<:Union{MOI.Semiinteger,MOI.Semicontinuous,MOI.ZeroOne,MOI.Integer}}
+    ::Type{<:MOI.AbstractScalarSet},
+)
     return false
+end
+
+function MOI.supports_constraint(
+    ::Optimizer,
+    ::Type{MOI.VariableIndex},
+    ::Type{S},
+) where {
+    S<:Union{
+        MOI.LessThan{Float64},
+        MOI.GreaterThan{Float64},
+        MOI.EqualTo{Float64},
+        MOI.Interval{Float64},
+    },
+}
+    return true
 end
 
 function MOI.supports(
     ::Optimizer,
     ::MOI.ObjectiveFunction{F},
-) where {
-    F<:Union{
-        MOI.VariableIndex,
-        MOI.ScalarAffineFunction,
-        MOI.ScalarQuadraticFunction,
-    },
-}
+) where {F<:MOI.AbstractFunction}
     return false
 end
 
