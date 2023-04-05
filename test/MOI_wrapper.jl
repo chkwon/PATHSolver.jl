@@ -351,6 +351,14 @@ function test_transmcp()
     return
 end
 
+function test_supports()
+    model = PATHSolver.Optimizer()
+    F = MOI.VariableIndex
+    @test !MOI.supports(model, MOI.ObjectiveFunction{F}())
+    @test MOI.supports_constraint(model, F, MOI.GreaterThan{Float64})
+    return
+end
+
 end
 
 TestMOIWrapper.runtests()
