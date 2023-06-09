@@ -1,8 +1,14 @@
+# Copyright (c) 2016 Changhyun Kwon, Oscar Dowson, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 module TestCAPI
 
-using PATHSolver
-using SparseArrays
 using Test
+
+import PATHSolver
+import SparseArrays
 
 function runtests()
     for name in names(@__MODULE__; all = true)

@@ -1,3 +1,8 @@
+# Copyright (c) 2016 Changhyun Kwon, Oscar Dowson, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 # PATH uses the Float64 value 1e20 to represent +infinity.
 const INFINITY = 1e20
 
@@ -665,7 +670,7 @@ where:
    chosen by the user as the `nnz` argumennt to `solve_mcp`.
  * `x` is the value of the decision variables at which to evaluate the Jacobian.
 
-The remainning arguments, `col`, `len`, `row`, and `data`, specifiy a sparse
+The remaining arguments, `col`, `len`, `row`, and `data`, specify a sparse
 column representation of the Jacobian matrix. These must be filled in by your
 function.
 
@@ -892,9 +897,9 @@ function solve_mcp(
     lb::Vector{Cdouble},
     ub::Vector{Cdouble},
     z::Vector{Cdouble};
+    nnz = SparseArrays.nnz(M),
     kwargs...,
 )
-    nnz = SparseArrays.nnz(M)
     return solve_mcp(
         _linear_function(M, q),
         _linear_jacobian(M),
