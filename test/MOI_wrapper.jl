@@ -364,6 +364,31 @@ function test_supports()
     return
 end
 
+function test_VectorNonlinearFunction()
+    model = PATHSolver.Optimizer()
+    MOI.Utilities.loadfromstring!(
+        model,
+        """
+        variables: w, x, y, z
+        VectorNonlinearFunction([ScalarNonlinearFunction(-y^2 - z + 2), ScalarNonlinearFunction(y^3 - 2z^2 + 2), w, x]) in Complements(4)
+        VectorNonlinearFunction([ScalarNonlinearFunction(w^5 - x + 2y - 2z - 2), y]) in Complements(2)
+        VectorNonlinearFunction([ScalarNonlinearFunction(w + 2x^3 - 2y + 4z - 6), z]) in Complements(2)
+        w in Interval(0.0, 10.0)
+        x in GreaterThan(0.0)
+        z in Interval(1.0, 2.0)
+        """,
+    )
+    x = MOI.get(model, MOI.ListOfVariableIndices())
+    MOI.set.(model, MOI.VariablePrimalStart(), x, 1.0)
+    MOI.optimize!(model)
+    @test ≈(
+        MOI.get.(model, MOI.VariablePrimal(), x),
+        [1.2847523, 0.9729164, 0.9093761, 1.1730350];
+        atol = 1e-6,
+    )
+    return
+end
+
 end
 
 TestMOIWrapper.runtests()
