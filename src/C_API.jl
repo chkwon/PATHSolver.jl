@@ -1,3 +1,8 @@
+# Copyright (c) 2016 Changhyun Kwon, Oscar Dowson, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 # PATH uses the Float64 value 1e20 to represent +infinity.
 const INFINITY = 1e20
 

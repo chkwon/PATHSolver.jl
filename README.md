@@ -41,7 +41,7 @@ You can either store the license in the `PATH_LICENSE_STRING` environment
 variable, or you can use the `PATHSolver.c_api_License_SetString` function
 immediately after importing the `PATHSolver` package:
 ```julia
-using PATHSolver
+import PATHSolver
 PATHSolver.c_api_License_SetString("<LICENSE STRING>")
 ```
 where `<LICENSE STRING>` is replaced by the current license string.
@@ -158,7 +158,7 @@ Here is the same example using `PATHSolver.solve_mcp`. Note that you must
 manually construct the sparse Jacobian callback.
 
 ```julia
-julia> using PATHSolver
+julia> import PATHSolver
 
 julia> M = [
            0  0 -1 -1

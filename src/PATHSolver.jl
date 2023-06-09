@@ -1,7 +1,12 @@
+# Copyright (c) 2016 Changhyun Kwon, Oscar Dowson, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 module PATHSolver
 
 import DataDeps
-import MathOptInterface
+import MathOptInterface as MOI
 import SparseArrays
 
 function __init__()

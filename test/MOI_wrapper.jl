@@ -1,10 +1,14 @@
+# Copyright (c) 2016 Changhyun Kwon, Oscar Dowson, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 module TestMOIWrapper
 
-using PATHSolver
 using Test
 
-using MathOptInterface
-const MOI = MathOptInterface
+import MathOptInterface as MOI
+import PATHSolver
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -49,6 +53,7 @@ function test_infeasible()
     @test MOI.get(model, MOI.TerminationStatus()) == MOI.INVALID_MODEL
     @test MOI.get(model, MOI.RawStatusString()) == "Problem has a bound error"
     @test MOI.get(model, MOI.PrimalStatus()) == MOI.UNKNOWN_RESULT_STATUS
+    return
 end
 
 function test_ZeroOne()

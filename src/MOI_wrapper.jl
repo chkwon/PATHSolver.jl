@@ -1,4 +1,7 @@
-const MOI = MathOptInterface
+# Copyright (c) 2016 Changhyun Kwon, Oscar Dowson, and contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
 MOI.Utilities.@model(
     Optimizer,
@@ -68,8 +71,12 @@ A full list of options can be found at http://pages.cs.wisc.edu/~ferris/path/opt
 
 ### Example
 
-    optimizer = PATH.Optimizer()
-    MOI.set(optimizer, MOI.RawOptimizerAttribute("output"), "no")
+```julia
+import PATHSolver
+import MathOptInterface as MOI
+model = PATHSolver.Optimizer()
+MOI.set(model, MOI.RawOptimizerAttribute("output"), "no")
+```
 """
 function Optimizer()
     model = Optimizer{Float64}()
