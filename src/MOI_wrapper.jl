@@ -12,7 +12,7 @@ MOI.Utilities.@model(
     (),  # Scalar functions
     (),  # Typed scalar functions
     (MOI.VectorNonlinearFunction,),  # Vector functions
-    (MOI.VectorAffineFunction,), # Typed vector functions
+    (MOI.VectorAffineFunction,),  # Typed vector functions
     true,  # is_optimizer
 )
 
