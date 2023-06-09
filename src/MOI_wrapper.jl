@@ -11,8 +11,8 @@ MOI.Utilities.@model(
     (),  # Typed vector sets
     (),  # Scalar functions
     (),  # Typed scalar functions
-    (),  # Vector functions
-    (MOI.VectorAffineFunction, MOI.VectorNonlinearFunction), # Typed vector functions
+    (MOI.VectorNonlinearFunction,),  # Vector functions
+    (MOI.VectorAffineFunction,), # Typed vector functions
     true,  # is_optimizer
 )
 
@@ -222,8 +222,8 @@ end
 
 function _F_nonlinear_operator(model::Optimizer)
     x = MOI.get(model, MOI.ListOfVariableIndices())
-    f_map = Vector{MOI.ScalarNonlinearFunction{Float64}}(undef, length(x))
-    T = MOI.VectorNonlinearFunction{Float64}
+    f_map = Vector{MOI.ScalarNonlinearFunction}(undef, length(x))
+    T = MOI.VectorNonlinearFunction
     for ci in MOI.get(model, MOI.ListOfConstraintIndices{T,MOI.Complements}())
         f = MOI.get(model, MOI.ConstraintFunction(), ci)
         s = MOI.get(model, MOI.ConstraintSet(), ci)
@@ -298,7 +298,7 @@ end
 
 function MOI.optimize!(model::Optimizer)
     con_types = MOI.get(model, MOI.ListOfConstraintTypesPresent())
-    is_nl = (MOI.VectorNonlinearFunction{Float64}, MOI.Complements) in con_types
+    is_nl = (MOI.VectorNonlinearFunction, MOI.Complements) in con_types
     F, J, nnz = if is_nl
         _F_nonlinear_operator(model)
     else
