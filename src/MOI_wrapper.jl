@@ -229,9 +229,9 @@ function _F_nonlinear_operator(model::Optimizer)
         s = MOI.get(model, MOI.ConstraintSet(), ci)
         N = div(MOI.dimension(s), 2)
         for i in 1:N
-            xi = f.args[i+N]
+            xi = f.rows[i+N]
             @assert xi isa MOI.VariableIndex
-            f_map[xi.value] = f.args[i]
+            f_map[xi.value] = f.rows[i]
         end
     end
     nlp = MOI.Nonlinear.Model()
