@@ -13,7 +13,7 @@ function __init__()
     platform = if Sys.iswindows()
         "windows"
     elseif Sys.isapple()
-        "macos"
+        Sys.ARCH == :aarch64 ? "silicon" : "macos"
     elseif Sys.islinux()
         "linux"
     else
@@ -27,6 +27,10 @@ function __init__()
         "macos" => (
             "libpath50.dylib",
             "8787de93d21f49a46146ebe2ef5844d1c20a80f934a85f60164f9ddc670412f8",
+        ),
+        "silicon" => (
+            "libpath50.silicon.dylib",
+            "4e667615180565062013ab50a3968bbeddf3e510a9cdbfc27aa685152742b637",
         ),
         "linux" => (
             "libpath50.so",
@@ -50,6 +54,10 @@ function __init__()
         "macos" => (
             "liblusol.dylib",
             "52d631fd3d753581c62d5b4b636e9cb3f8cc822738fe34c6879443d5b5092f12",
+        ),
+        "silicon" => (
+            "liblusol.silicon.dylib",
+            "24113f8730cdaa567c70eee36209720e37ade6080dc62bfd5ee873da0357b88d",
         ),
         "linux" => (
             "liblusol.so",
