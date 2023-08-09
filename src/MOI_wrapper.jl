@@ -230,8 +230,11 @@ function _F_nonlinear_operator(model::Optimizer)
         N = div(MOI.dimension(s), 2)
         for i in 1:N
             xi = f.rows[i+N]
-            @assert xi isa MOI.VariableIndex
-            f_map[xi.value] = f.rows[i]
+            # Hacky way to ensure that xi is a standalone variable
+            @assert xi isa MOI.ScalarNonlinearFunction
+            @assert xi.head == :+ && length(xi.args) == 1
+            @assert xi.args[1] isa MOI.VariableIndex
+            f_map[xi.args[1].value] = f.rows[i]
         end
     end
     nlp = MOI.Nonlinear.Model()
