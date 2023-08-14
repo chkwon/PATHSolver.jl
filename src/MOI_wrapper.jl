@@ -11,7 +11,7 @@ MOI.Utilities.@model(
     (),  # Typed vector sets
     (),  # Scalar functions
     (),  # Typed scalar functions
-    (MOI.VectorNonlinearFunction,),  # Vector functions
+    (MOI.VectorOfVariables, MOI.VectorNonlinearFunction,),  # Vector functions
     (MOI.VectorAffineFunction, MOI.VectorQuadraticFunction),  # Typed vector functions
     true,  # is_optimizer
 )
@@ -220,34 +220,38 @@ function _F_linear_operator(model::Optimizer)
     return M, q, SparseArrays.nnz(M)
 end
 
+_to_f(f) = convert(MOI.ScalarNonlinearFunction, f)
+
+_to_x(f::MOI.VariableIndex) = f
+
+_to_x(f::MOI.ScalarAffineFunction) = convert(MOI.VariableIndex, f)
+
+_to_x(f::MOI.ScalarQuadraticFunction) = convert(MOI.VariableIndex, f)
+
+function _to_x(f::MOI.ScalarNonlinearFunction)
+    # Hacky way to ensure that f is a standalone variable
+    @assert f isa MOI.ScalarNonlinearFunction
+    @assert f.head == :+ && length(f.args) == 1
+    @assert f.args[1] isa MOI.VariableIndex
+    return return f.args[1]
+end
+
 function _F_nonlinear_operator(model::Optimizer)
     x = MOI.get(model, MOI.ListOfVariableIndices())
     f_map = Vector{MOI.ScalarNonlinearFunction}(undef, length(x))
-    # Parse VectorQuadraticFunction-in-Complements
-    T = MOI.VectorQuadraticFunction{Float64}
-    for ci in MOI.get(model, MOI.ListOfConstraintIndices{T,MOI.Complements}())
-        f = MOI.get(model, MOI.ConstraintFunction(), ci)
-        scalars = MOI.Utilities.scalarize(f)
-        s = MOI.get(model, MOI.ConstraintSet(), ci)
-        N = div(MOI.dimension(s), 2)
-        for i in 1:N
-            xi = convert(MOI.VariableIndex, scalars[i+N])
-            f_map[xi.value] = convert(MOI.ScalarNonlinearFunction, scalars[i])
+    for (FType, SType) in MOI.get(model, MOI.ListOfConstraintTypesPresent())
+        if SType != MOI.Complements
+            continue
         end
-    end
-    # Parse VectorNonlinearFunction-in-Complements
-    T = MOI.VectorNonlinearFunction
-    for ci in MOI.get(model, MOI.ListOfConstraintIndices{T,MOI.Complements}())
-        f = MOI.get(model, MOI.ConstraintFunction(), ci)
-        s = MOI.get(model, MOI.ConstraintSet(), ci)
-        N = div(MOI.dimension(s), 2)
-        for i in 1:N
-            xi = f.rows[i+N]
-            # Hacky way to ensure that xi is a standalone variable
-            @assert xi isa MOI.ScalarNonlinearFunction
-            @assert xi.head == :+ && length(xi.args) == 1
-            @assert xi.args[1] isa MOI.VariableIndex
-            f_map[xi.args[1].value] = f.rows[i]
+        for ci in MOI.get(model, MOI.ListOfConstraintIndices{FType,SType}())
+            f = MOI.get(model, MOI.ConstraintFunction(), ci)
+            s = MOI.get(model, MOI.ConstraintSet(), ci)
+            N = div(MOI.dimension(s), 2)
+            scalars = MOI.Utilities.scalarize(f)
+            for i in 1:N
+                fi, xi = _to_f(scalars[i]), _to_x(scalars[i+N])
+                f_map[xi.value] = fi
+            end
         end
     end
     nlp = MOI.Nonlinear.Model()
