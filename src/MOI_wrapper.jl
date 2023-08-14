@@ -12,7 +12,7 @@ MOI.Utilities.@model(
     (),  # Scalar functions
     (),  # Typed scalar functions
     (MOI.VectorNonlinearFunction,),  # Vector functions
-    (MOI.VectorAffineFunction,),  # Typed vector functions
+    (MOI.VectorAffineFunction,MOI.VectorQuadraticFunction),  # Typed vector functions
     true,  # is_optimizer
 )
 
@@ -223,6 +223,19 @@ end
 function _F_nonlinear_operator(model::Optimizer)
     x = MOI.get(model, MOI.ListOfVariableIndices())
     f_map = Vector{MOI.ScalarNonlinearFunction}(undef, length(x))
+    # Parse VectorQuadraticFunction-in-Complements
+    T = MOI.VectorQuadraticFunction{Float64}
+    for ci in MOI.get(model, MOI.ListOfConstraintIndices{T,MOI.Complements}())
+        f = MOI.get(model, MOI.ConstraintFunction(), ci)
+        scalars = MOI.Utilities.scalarize(f)
+        s = MOI.get(model, MOI.ConstraintSet(), ci)
+        N = div(MOI.dimension(s), 2)
+        for i in 1:N
+            xi = convert(MOI.VariableIndex, scalars[i+N])
+            f_map[xi.value] = convert(MOI.ScalarNonlinearFunction, scalars[i])
+        end
+    end
+    # Parse VectorNonlinearFunction-in-Complements
     T = MOI.VectorNonlinearFunction
     for ci in MOI.get(model, MOI.ListOfConstraintIndices{T,MOI.Complements}())
         f = MOI.get(model, MOI.ConstraintFunction(), ci)
@@ -301,8 +314,9 @@ end
 
 function MOI.optimize!(model::Optimizer)
     con_types = MOI.get(model, MOI.ListOfConstraintTypesPresent())
-    is_nl = (MOI.VectorNonlinearFunction, MOI.Complements) in con_types
-    F, J, nnz = if is_nl
+    S = MOI.Complements
+    F, J, nnz = if (MOI.VectorNonlinearFunction, S) in con_types ||
+                   (MOI.VectorQuadraticFunction{Float64}, S) in con_types
         _F_nonlinear_operator(model)
     else
         _F_linear_operator(model)

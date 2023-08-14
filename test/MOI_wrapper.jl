@@ -364,14 +364,14 @@ function test_supports()
     return
 end
 
-function test_VectorNonlinearFunction()
+function test_VectorQuadraticFunction_VectorNonlinearFunction()
     model = PATHSolver.Optimizer()
     MOI.Utilities.loadfromstring!(
         model,
         """
         variables: w, x, y, z
-        VectorNonlinearFunction([ScalarNonlinearFunction(-y^2 - z + 2), ScalarNonlinearFunction(y^3 - 2z^2 + 2), w, x]) in Complements(4)
-        VectorNonlinearFunction([ScalarNonlinearFunction(w^5 - x + 2y - 2z - 2), y]) in Complements(2)
+        [-1.0 * y * y + -1.0 * z + 2, w] in Complements(2)
+        VectorNonlinearFunction([ScalarNonlinearFunction(y^3 - 2z^2 + 2), ScalarNonlinearFunction(w^5 - x + 2y - 2z - 2), x, y]) in Complements(4)
         VectorNonlinearFunction([ScalarNonlinearFunction(w + 2x^3 - 2y + 4z - 6), z]) in Complements(2)
         w in Interval(0.0, 10.0)
         x in GreaterThan(0.0)
