@@ -12,7 +12,7 @@ MOI.Utilities.@model(
     (),  # Scalar functions
     (),  # Typed scalar functions
     (MOI.VectorNonlinearFunction,),  # Vector functions
-    (MOI.VectorAffineFunction,MOI.VectorQuadraticFunction),  # Typed vector functions
+    (MOI.VectorAffineFunction, MOI.VectorQuadraticFunction),  # Typed vector functions
     true,  # is_optimizer
 )
 
@@ -314,9 +314,10 @@ end
 
 function MOI.optimize!(model::Optimizer)
     con_types = MOI.get(model, MOI.ListOfConstraintTypesPresent())
-    S = MOI.Complements
-    F, J, nnz = if (MOI.VectorNonlinearFunction, S) in con_types ||
-                   (MOI.VectorQuadraticFunction{Float64}, S) in con_types
+    is_nlp =
+        (MOI.VectorNonlinearFunction, MOI.Complements) in con_types ||
+        (MOI.VectorQuadraticFunction{Float64}, MOI.Complements) in con_types
+    F, J, nnz = if is_nlp
         _F_nonlinear_operator(model)
     else
         _F_linear_operator(model)
