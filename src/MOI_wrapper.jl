@@ -11,7 +11,7 @@ MOI.Utilities.@model(
     (),  # Typed vector sets
     (),  # Scalar functions
     (),  # Typed scalar functions
-    (MOI.VectorOfVariables, MOI.VectorNonlinearFunction,),  # Vector functions
+    (MOI.VectorOfVariables, MOI.VectorNonlinearFunction),  # Vector functions
     (MOI.VectorAffineFunction, MOI.VectorQuadraticFunction),  # Typed vector functions
     true,  # is_optimizer
 )
