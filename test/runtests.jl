@@ -4,7 +4,7 @@
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
 import Pkg
-Pkg.pkg"add MathOptInterface#od/vnf"
+Pkg.pkg"add MathOptInterface#master"
 
 using Test
 
