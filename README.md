@@ -137,12 +137,14 @@ List of supported constraint types:
  * [`MOI.VariableIndex`](@ref) in [`MOI.GreaterThan{Float64}`](@ref)
  * [`MOI.VariableIndex`](@ref) in [`MOI.Interval{Float64}`](@ref)
  * [`MOI.VariableIndex`](@ref) in [`MOI.LessThan{Float64}`](@ref)
+ * [`MOI.VectorOfVariables`](@ref) in [`MOI.Complements`](@ref)
  * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.Complements`](@ref)
+ * [`MOI.VectorQuadraticFunction{Float64}`](@ref) in [`MOI.Complements`](@ref)
+ * [`MOI.VectorNonlinearFunction`](@ref) in [`MOI.Complements`](@ref)
 
 List of supported model attributes:
 
  * [`MOI.Name()`](@ref)
- * [`MOI.ObjectiveSense()`](@ref)
 
 ## Use with the C API
 
