@@ -364,6 +364,33 @@ function test_supports()
     return
 end
 
+function test_VectorQuadraticFunction_VectorNonlinearFunction()
+    model = PATHSolver.Optimizer()
+    MOI.Utilities.loadfromstring!(
+        model,
+        """
+        variables: v, w, x, y, z
+        VectorNonlinearFunction([0, v]) in Complements(2)
+        [-1.0 * y * y + -1.0 * z + 2, w] in Complements(2)
+        VectorNonlinearFunction([ScalarNonlinearFunction(y^3 - 2z^2 + 2), ScalarNonlinearFunction(w^5 - x + 2y - 2z - 2), x, y]) in Complements(4)
+        VectorNonlinearFunction([ScalarNonlinearFunction(w + 2x^3 - 2y + 4z - 6), z]) in Complements(2)
+        v in EqualTo(1.0)
+        w in Interval(0.0, 10.0)
+        x in GreaterThan(0.0)
+        z in Interval(1.0, 2.0)
+        """,
+    )
+    x = MOI.get(model, MOI.ListOfVariableIndices())
+    MOI.set.(model, MOI.VariablePrimalStart(), x, 1.0)
+    MOI.optimize!(model)
+    @test ≈(
+        MOI.get.(model, MOI.VariablePrimal(), x),
+        [1.0, 1.2847523, 0.9729164, 0.9093761, 1.1730350];
+        atol = 1e-6,
+    )
+    return
+end
+
 end
 
 TestMOIWrapper.runtests()
