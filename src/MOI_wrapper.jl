@@ -281,10 +281,13 @@ function _F_nonlinear_operator(model::Optimizer)
         if !jacobian_called
             k = 1
             last_col = 0
+            # We need to zero all entries up front in case some rows do not
+            # appear in the Jacobian.
+            len .= Cint(0)
             for p in forward_perm
                 r, c = J_structure[p]
                 if c != last_col
-                    col[c], len[c], last_col = k, 0, c
+                    col[c], last_col = k, c
                 end
                 len[c] += 1
                 row[k] = r
