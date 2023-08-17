@@ -391,6 +391,40 @@ function test_VectorQuadraticFunction_VectorNonlinearFunction()
     return
 end
 
+function test_nonlinear_duplicate_rows()
+    model = PATHSolver.Optimizer()
+    MOI.Utilities.loadfromstring!(
+        model,
+        """
+        variables: x
+        VectorNonlinearFunction([0.0, x]) in Complements(2)
+        VectorNonlinearFunction([0.0, x]) in Complements(2)
+        """,
+    )
+    @test_throws(
+        ErrorException(
+            "The variable $(MOI.VariableIndex(1)) appears in more than one " *
+            "complementarity constraint.",
+        ),
+        MOI.optimize!(model),
+    )
+    return
+end
+
+function test_missing_rows()
+    model = PATHSolver.Optimizer()
+    MOI.Utilities.loadfromstring!(
+        model,
+        """
+        variables: x, y
+        VectorNonlinearFunction([0.0, x]) in Complements(2)
+        """,
+    )
+    MOI.optimize!(model)
+    @test MOI.get(model, MOI.TerminationStatus()) == MOI.LOCALLY_SOLVED
+    return
+end
+
 end
 
 TestMOIWrapper.runtests()

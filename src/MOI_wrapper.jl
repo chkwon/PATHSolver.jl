@@ -250,8 +250,19 @@ function _F_nonlinear_operator(model::Optimizer)
             scalars = MOI.Utilities.scalarize(f)
             for i in 1:N
                 fi, xi = _to_f(scalars[i]), _to_x(scalars[i+N])
+                if isassigned(f_map, xi.value)
+                    error(
+                        "The variable $xi appears in more than one " *
+                        "complementarity constraint.",
+                    )
+                end
                 f_map[xi.value] = fi
             end
+        end
+    end
+    for i in 1:length(x)
+        if !isassigned(f_map, i)
+            f_map[i] = MOI.ScalarNonlinearFunction(:+, Any[0.0])
         end
     end
     nlp = MOI.Nonlinear.Model()
@@ -294,7 +305,9 @@ function _F_nonlinear_operator(model::Optimizer)
                 k += 1
             end
             jacobian_called = true
-            @assert nnz == k - 1
+            # Seems like a potential bug in PATH. If the Jacobian is empty, PATH
+            # still passes `nnz = 1`.
+            @assert (nnz == k - 1) || (nnz == k == 1)
         end
         MOI.eval_constraint_jacobian(evaluator, view(data, inverse_perm), x)
         return Cint(0)
