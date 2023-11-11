@@ -1,7 +1,7 @@
 name = "PATHSolver"
 uuid = "f5f7c340-0bb3-5c69-969a-41884d311d1b"
 authors = ["Changhyun Kwon <chkwon@gmail.com>", "Oscar Dowson <o.dowson@gmail.com>"]
-version = "1.6.1"
+version = "1.7.0"
 
 [deps]
 DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
@@ -12,5 +12,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 DataDeps = "0.7"
+Libdl = "<0.0.1, 1.6"
 MathOptInterface = "1.19"
+SparseArrays = "<0.0.1, 1.6"
+Test = "<0.0.1, 1.6"
 julia = "1.6"
