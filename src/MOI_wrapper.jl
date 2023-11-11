@@ -46,16 +46,6 @@ function MOI.supports(
     return false
 end
 
-struct Solution
-    status::MCP_Termination
-    x::Vector{Float64}
-    info::Information
-end
-
-function solution(model::Optimizer)
-    return get(model.ext, :solution, nothing)::Union{Nothing,Solution}
-end
-
 """
     Optimizer()
 
@@ -86,6 +76,10 @@ function Optimizer()
     return model
 end
 
+# MOI.RawOptimizerAttribute
+
+MOI.supports(::Optimizer, ::MOI.RawOptimizerAttribute) = true
+
 function MOI.set(model::Optimizer, p::MOI.RawOptimizerAttribute, v)
     model.ext[:kwargs][Symbol(p.name)] = v
     return
@@ -94,6 +88,8 @@ end
 function MOI.get(model::Optimizer, p::MOI.RawOptimizerAttribute)
     return get(model.ext[:kwargs], Symbol(p.name), nothing)
 end
+
+# MOI.Silent
 
 MOI.supports(model::Optimizer, ::MOI.Silent) = true
 
@@ -104,7 +100,11 @@ function MOI.set(model::Optimizer, ::MOI.Silent, x::Bool)
     return
 end
 
+# MOI.SolverName
+
 MOI.get(model::Optimizer, ::MOI.SolverName) = c_api_Path_Version()
+
+# MOI.VariablePrimalStart
 
 function MOI.supports(
     ::Optimizer,
@@ -113,6 +113,7 @@ function MOI.supports(
 )
     return true
 end
+
 
 function MOI.get(
     model::Optimizer,
@@ -144,6 +145,8 @@ function MOI.set(
     end
     return
 end
+
+# Operators
 
 function _F_linear_operator(model::Optimizer)
     n = MOI.get(model, MOI.NumberOfVariables())
@@ -332,6 +335,18 @@ function _bounds_and_starting(model::Optimizer)
     return lower, upper, initial
 end
 
+# MOI.optimize!
+
+struct Solution
+    status::MCP_Termination
+    x::Vector{Float64}
+    info::Information
+end
+
+function solution(model::Optimizer)
+    return get(model.ext, :solution, nothing)::Union{Nothing,Solution}
+end
+
 function MOI.optimize!(model::Optimizer)
     con_types = MOI.get(model, MOI.ListOfConstraintTypesPresent())
     is_nlp =
@@ -387,6 +402,18 @@ function MOI.get(model::Optimizer, ::MOI.TerminationStatus)
     return status
 end
 
+function MOI.get(model::Optimizer, attr::MOI.PrimalStatus)
+    if solution(model) === nothing || attr.result_index != 1
+        return MOI.NO_SOLUTION
+    end
+    if MOI.get(model, MOI.TerminationStatus()) == MOI.LOCALLY_SOLVED
+        return MOI.FEASIBLE_POINT
+    end
+    return MOI.UNKNOWN_RESULT_STATUS
+end
+
+MOI.get(::Optimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
+
 function MOI.get(model::Optimizer, ::MOI.RawStatusString)
     if solution(model) === nothing
         return "MOI.optimize! was not called yet"
@@ -407,18 +434,6 @@ function MOI.get(
     MOI.check_result_index_bounds(model, attr)
     return solution(model).x[x.value]
 end
-
-function MOI.get(model::Optimizer, attr::MOI.PrimalStatus)
-    if solution(model) === nothing || attr.result_index != 1
-        return MOI.NO_SOLUTION
-    end
-    if MOI.get(model, MOI.TerminationStatus()) == MOI.LOCALLY_SOLVED
-        return MOI.FEASIBLE_POINT
-    end
-    return MOI.UNKNOWN_RESULT_STATUS
-end
-
-MOI.get(::Optimizer, ::MOI.DualStatus) = MOI.NO_SOLUTION
 
 function MOI.get(model::Optimizer, ::MOI.SolveTimeSec)
     return solution(model).info.total_time
