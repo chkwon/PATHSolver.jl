@@ -114,7 +114,6 @@ function MOI.supports(
     return true
 end
 
-
 function MOI.get(
     model::Optimizer,
     ::MOI.VariablePrimalStart,
