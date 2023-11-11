@@ -442,7 +442,7 @@ function test_user_defined_function()
         model,
         MOI.VectorNonlinearFunction([
             MOI.ScalarNonlinearFunction(:op_f, Any[x...]),
-            MOI.ScalarNonlinearFunction(:+, Any[x[1]])
+            MOI.ScalarNonlinearFunction(:+, Any[x[1]]),
         ]),
         MOI.Complements(2),
     )
