@@ -425,6 +425,38 @@ function test_missing_rows()
     return
 end
 
+function test_user_defined_function()
+    f(x...) = (1 - x[1])
+    function ∇f(g, x...)
+        g[1] = -1
+        return
+    end
+    model = MOI.instantiate(PATHSolver.Optimizer)
+    MOI.set(model, MOI.Silent(), true)
+    x = MOI.add_variables(model, 2)
+    MOI.add_constraint.(model, x, MOI.GreaterThan(0.0))
+    @test MOI.supports(model, MOI.UserDefinedFunction(:op_f, 2))
+    MOI.set(model, MOI.UserDefinedFunction(:op_f, 2), (f, ∇f))
+    @test MOI.get(model, MOI.UserDefinedFunction(:op_f, 2)) == (f, ∇f)
+    MOI.add_constraint(
+        model,
+        MOI.VectorNonlinearFunction([
+            MOI.ScalarNonlinearFunction(:op_f, Any[x...]),
+            MOI.ScalarNonlinearFunction(:+, Any[x[1]]),
+        ]),
+        MOI.Complements(2),
+    )
+    MOI.add_constraint(
+        model,
+        MOI.Utilities.operate(vcat, Float64, 1.0 - x[2], x[2]),
+        MOI.Complements(2),
+    )
+    MOI.optimize!(model)
+    sol = MOI.get(model, MOI.VariablePrimal(), x)
+    @test all(abs.(sol .* (1 .- sol)) .< 1e-4)
+    return
+end
+
 end
 
 TestMOIWrapper.runtests()

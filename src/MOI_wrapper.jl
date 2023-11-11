@@ -73,6 +73,7 @@ function Optimizer()
     model.ext[:silent] = false
     model.ext[:kwargs] = Dict{Symbol,Any}()
     model.ext[:solution] = nothing
+    model.ext[:user_defined_functions] = Dict{MOI.UserDefinedFunction,Any}()
     return model
 end
 
@@ -142,6 +143,19 @@ function MOI.set(
     else
         initial[x] = value
     end
+    return
+end
+
+# MOI.UserDefinedFunction
+
+MOI.supports(::Optimizer, ::MOI.UserDefinedFunction) = true
+
+function MOI.get(model::Optimizer, attr::MOI.UserDefinedFunction)
+    return model.ext[:user_defined_functions][attr]
+end
+
+function MOI.set(model::Optimizer, attr::MOI.UserDefinedFunction, value)
+    model.ext[:user_defined_functions][attr] = value
     return
 end
 
@@ -268,6 +282,9 @@ function _F_nonlinear_operator(model::Optimizer)
         end
     end
     nlp = MOI.Nonlinear.Model()
+    for (attr, value) in model.ext[:user_defined_functions]
+        MOI.Nonlinear.register_operator(nlp, attr.name, attr.arity, value...)
+    end
     for fi in f_map
         MOI.Nonlinear.add_constraint(nlp, fi, MOI.EqualTo(0.0))
     end
