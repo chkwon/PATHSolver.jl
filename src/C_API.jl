@@ -750,6 +750,9 @@ function solve_mcp(
     jacobian_linear_elements::Vector{Int} = Int[],
     kwargs...,
 )
+    if c_api_Path_CheckLicense(length(z), nnz) == 0
+        return MCP_LicenseError, nothing, nothing
+    end
     @assert length(z) == length(lb) == length(ub)
     out_io = silent ? IOBuffer() : stdout
     output_data = OutputData(out_io)

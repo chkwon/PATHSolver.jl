@@ -31,6 +31,15 @@ end
 function test_CheckLicense()
     @test PATHSolver.c_api_License_SetString("bad_license") != 0
     @test PATHSolver.c_api_Path_CheckLicense(1, 1) > 0
+    @test let n = 100
+        PATHSolver.solve_mcp(
+            SparseArrays.SparseMatrixCSC{Float64,Int32}(rand(n, n)),
+            rand(n),
+            rand(n),
+            rand(n),
+            rand(n),
+        ) == (PATHSolver.MCP_LicenseError, nothing, nothing)
+    end
     return
 end
 
