@@ -9,7 +9,7 @@ import DataDeps
 import MathOptInterface as MOI
 import SparseArrays
 
-function __init__()
+function _install_datadeps()
     platform = if Sys.iswindows()
         "windows"
     elseif Sys.isapple()
@@ -73,17 +73,22 @@ function __init__()
             liblusol_sha256,
         ),
     )
+    current = get(ENV, "DATADEPS_ALWAYS_ACCEPT", "false")
+    ENV["DATADEPS_ALWAYS_ACCEPT"] = "true"
+    libpath = joinpath(DataDeps.datadep"libpath50", libpath_filename)
+    liblusol = joinpath(DataDeps.datadep"liblusol", liblusol_filename)
+    ENV["DATADEPS_ALWAYS_ACCEPT"] = current
+    return libpath, liblusol
+end
+
+function __init__()
     if haskey(ENV, "PATH_JL_LOCATION")
         global PATH_SOLVER = ENV["PATH_JL_LOCATION"]
         global LUSOL_LIBRARY_PATH = ""
     else
-        current = get(ENV, "DATADEPS_ALWAYS_ACCEPT", "false")
-        ENV["DATADEPS_ALWAYS_ACCEPT"] = "true"
-        global PATH_SOLVER =
-            joinpath(DataDeps.datadep"libpath50", libpath_filename)
-        global LUSOL_LIBRARY_PATH =
-            joinpath(DataDeps.datadep"liblusol", liblusol_filename)
-        ENV["DATADEPS_ALWAYS_ACCEPT"] = current
+        libpath, liblusol = _install_datadeps()
+        global PATH_SOLVER = libpath
+        global LUSOL_LIBRARY_PATH = liblusol
     end
     return
 end
