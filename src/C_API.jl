@@ -820,6 +820,11 @@ function solve_mcp(
         )
         status = c_api_Path_Solve(m, info)
     end  # GC.@preserve
+
+    if status == MCP_UserInterrupt
+        throw(InterruptException())
+    end
+
     X = c_api_MCP_GetX(m)
     # TODO(odow): I don't know why, but manually calling MCP_Destroy was
     # necessary to avoid a segfault on Julia 1.0 when using LUSOL. I guess it's
