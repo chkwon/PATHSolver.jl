@@ -457,6 +457,13 @@ function test_user_defined_function()
     return
 end
 
+function test_empty_model()
+    model = PATHSolver.Optimizer()
+    MOI.optimize!(model)
+    @test MOI.get(model, MOI.TerminationStatus()) == MOI.LOCALLY_SOLVED
+    return
+end
+
 end
 
 TestMOIWrapper.runtests()
