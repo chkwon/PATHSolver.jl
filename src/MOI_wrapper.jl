@@ -387,6 +387,12 @@ function MOI.optimize!(model::Optimizer)
         jacobian_data_contiguous = true,
         [k => v for (k, v) in model.ext[:kwargs]]...,
     )
+    if x === nothing
+        x = fill(NaN, length(initial))
+    end
+    if info === nothing
+        info = Information()
+    end
     model.ext[:solution] = Solution(status, x, info)
     return
 end
