@@ -258,7 +258,7 @@ function _c_variable_name(
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     data = fill(UInt8('\0'), buf_size)
     units = codeunits(id_data.variable_names[i])
-    for j in 1:min(length(units), buf_size) - 1
+    for j in 1:min(length(units), buf_size)-1
         data[j] = units[j]
     end
     GC.@preserve data begin
@@ -276,7 +276,7 @@ function _c_constraint_name(
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
     data = fill(UInt8('\0'), buf_size)
     units = codeunits(id_data.constraint_names[i])
-    for j in 1:min(length(units), buf_size) - 1
+    for j in 1:min(length(units), buf_size)-1
         data[j] = units[j]
     end
     GC.@preserve data begin

@@ -210,7 +210,6 @@ function test_variable_primal_start()
     return
 end
 
-
 function _test_Example_I(use_primal_start::Bool)
     model = PATHSolver.Optimizer()
     MOI.set(model, MOI.RawOptimizerAttribute("time_limit"), 60)
