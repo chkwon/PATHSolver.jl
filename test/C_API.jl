@@ -18,6 +18,13 @@ function runtests()
             end
         end
     end
+    if get(ENV, "CI", "false") == "true"
+        @testset "manual_test_CheckLicense" begin
+            # Calling this test twice seems to lead to segfaults, so test it
+            # only if we are running on CI.
+            manual_test_CheckLicense()
+        end
+    end
     return
 end
 
@@ -28,18 +35,27 @@ function _check_info_sanity(info)
     return
 end
 
-function test_CheckLicense()
+function test_License_SetString()
     @test PATHSolver.c_api_License_SetString("bad_license") != 0
-    @test PATHSolver.c_api_Path_CheckLicense(1, 1) > 0
-    @test let n = 100
-        PATHSolver.solve_mcp(
-            SparseArrays.SparseMatrixCSC{Float64,Int32}(rand(n, n)),
-            rand(n),
-            rand(n),
-            rand(n),
-            rand(n),
-        ) == (PATHSolver.MCP_LicenseError, nothing, nothing)
+    return
+end
+
+function manual_test_CheckLicense()
+    @test PATHSolver.c_api_Path_CheckLicense(1, 1) == 1
+    @test PATHSolver.c_api_Path_CheckLicense(1_000, 1_000) == 0
+    n = 1_000
+    M = zeros(n, n)
+    for i in 1:n
+        M[i, i] = 1.0
     end
+    ret = PATHSolver.solve_mcp(
+        SparseArrays.SparseMatrixCSC{Float64,Int32}(M),
+        ones(n),    # q
+        zeros(n),   # lb
+        ones(n),    # ub
+        ones(n),    # z
+    )
+    @test ret == (PATHSolver.MCP_LicenseError, nothing, nothing)
     return
 end
 
@@ -70,6 +86,51 @@ function test_Example()
     @test status == PATHSolver.MCP_Solved
     @test isapprox(z, [2.8, 0.0, 0.8, 1.2])
     _check_info_sanity(info)
+    return
+end
+
+function test_M_not_square()
+    M = convert(
+        SparseArrays.SparseMatrixCSC{Cdouble,Cint},
+        SparseArrays.sparse([
+            1 -1 2 -2
+            1 2 -2 4
+        ]),
+    )
+    err = ErrorException("M not square! size = $(size(M))")
+    @test_throws err PATHSolver.solve_mcp(
+        M,
+        Float64[2, 2],
+        fill(0.0, 4),
+        fill(10.0, 4),
+        [0.0, 0.0, 0.0, 0.0];
+        output = "yes",
+    )
+    return
+end
+
+function test_q_wrong_shape()
+    M = convert(
+        SparseArrays.SparseMatrixCSC{Cdouble,Cint},
+        SparseArrays.sparse([
+            0 0 -1 -1
+            0 0 1 -2
+            1 -1 2 -2
+            1 2 -2 4
+        ]),
+    )
+    q = [2.0, 2.0]
+    err = ErrorException(
+        "q is wrong shape. Expected $(size(M, 1)), got $(length(q)).",
+    )
+    @test_throws err PATHSolver.solve_mcp(
+        M,
+        q,
+        fill(0.0, 4),
+        fill(10.0, 4),
+        [0.0, 0.0, 0.0, 0.0];
+        output = "yes",
+    )
     return
 end
 

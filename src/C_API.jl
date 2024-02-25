@@ -256,12 +256,13 @@ function _c_variable_name(
     buf_size::Cint,
 )
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
-    name = collect(codeunits(id_data.variable_names[i]))
-    n = length(name)
-    resize!(name, buf_size)
-    name[min(buf_size, n + 1):end] .= UInt8('\0')
-    GC.@preserve name begin
-        unsafe_copyto!(buf_ptr, pointer(name), buf_size)
+    data = fill(UInt8('\0'), buf_size)
+    units = codeunits(id_data.variable_names[i])
+    for j in 1:min(length(units), buf_size) - 1
+        data[j] = units[j]
+    end
+    GC.@preserve data begin
+        unsafe_copyto!(buf_ptr, pointer(data), buf_size)
     end
     return
 end
@@ -273,12 +274,13 @@ function _c_constraint_name(
     buf_size::Cint,
 )
     id_data = unsafe_pointer_to_objref(id_ptr)::InterfaceData
-    name = collect(codeunits(id_data.constraint_names[i]))
-    n = length(name)
-    resize!(name, buf_size)
-    name[min(buf_size, n + 1):end] .= UInt8('\0')
-    GC.@preserve name begin
-        unsafe_copyto!(buf_ptr, pointer(name), buf_size)
+    data = fill(UInt8('\0'), buf_size)
+    units = codeunits(id_data.constraint_names[i])
+    for j in 1:min(length(units), buf_size) - 1
+        data[j] = units[j]
+    end
+    GC.@preserve data begin
+        unsafe_copyto!(buf_ptr, pointer(data), buf_size)
     end
     return
 end
@@ -843,9 +845,8 @@ function _linear_function(M::AbstractMatrix, q::Vector)
 end
 
 function _linear_jacobian(M::SparseArrays.SparseMatrixCSC{Cdouble,Cint})
-    if size(M, 1) != size(M, 2)
-        error("M not square! size = $(size(M))")
-    end
+    # Size is checked with error message in _linear_function.
+    @assert size(M, 1) != size(M, 2)
     return (
         n::Cint,
         nnz::Cint,
