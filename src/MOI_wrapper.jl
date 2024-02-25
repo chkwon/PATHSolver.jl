@@ -166,6 +166,7 @@ function _F_linear_operator(model::Optimizer)
     M = SparseArrays.sparse(Int32[], Int32[], Float64[], n, n)
     q = zeros(n)
     has_term = fill(false, n)
+    names = String[]
     for index in MOI.get(
         model,
         MOI.ListOfConstraintIndices{
@@ -232,8 +233,16 @@ function _F_linear_operator(model::Optimizer)
             end
             M[row_i, s_term.variable.value] += s_term.coefficient
         end
+        c_name = MOI.get(model, MOI.ConstraintName(), index)
+        if Si.dimension == 2
+            push!(names, c_name)
+        else
+            for i in 1:div(Si.dimension, 2)
+                push!(names, "$(c_name)[$i]")
+            end
+        end
     end
-    return M, q, SparseArrays.nnz(M)
+    return M, q, SparseArrays.nnz(M), names
 end
 
 _to_f(f) = convert(MOI.ScalarNonlinearFunction, f)
@@ -255,6 +264,7 @@ end
 function _F_nonlinear_operator(model::Optimizer)
     x = MOI.get(model, MOI.ListOfVariableIndices())
     f_map = Vector{MOI.ScalarNonlinearFunction}(undef, length(x))
+    names = String[]
     for (FType, SType) in MOI.get(model, MOI.ListOfConstraintTypesPresent())
         if SType != MOI.Complements
             continue
@@ -273,6 +283,14 @@ function _F_nonlinear_operator(model::Optimizer)
                     )
                 end
                 f_map[xi.value] = fi
+            end
+            c_name = MOI.get(model, MOI.ConstraintName(), ci)
+            if N == 1
+                push!(names, c_name)
+            else
+                for i in 1:N
+                    push!(names, "$(c_name)[$i]")
+                end
             end
         end
     end
@@ -331,7 +349,7 @@ function _F_nonlinear_operator(model::Optimizer)
         MOI.eval_constraint_jacobian(evaluator, view(data, inverse_perm), x)
         return Cint(0)
     end
-    return F, J, length(J_structure)
+    return F, J, length(J_structure), names
 end
 
 _finite(x, y) = isfinite(x) ? x : y
@@ -348,7 +366,8 @@ function _bounds_and_starting(model::Optimizer)
         upper[i] = u
         initial[i] = something(z, _finite(l, _finite(u, 0.0)))
     end
-    return lower, upper, initial
+    names = MOI.get.(model, MOI.VariableName(), x)
+    return lower, upper, initial, names
 end
 
 # MOI.optimize!
@@ -368,13 +387,13 @@ function MOI.optimize!(model::Optimizer)
     is_nlp =
         (MOI.VectorNonlinearFunction, MOI.Complements) in con_types ||
         (MOI.VectorQuadraticFunction{Float64}, MOI.Complements) in con_types
-    F, J, nnz = if is_nlp
+    F, J, nnz, c_names = if is_nlp
         _F_nonlinear_operator(model)
     else
         _F_linear_operator(model)
     end
     model.ext[:solution] = nothing
-    lower, upper, initial = _bounds_and_starting(model)
+    lower, upper, initial, names = _bounds_and_starting(model)
     status, x, info = solve_mcp(
         F,
         J,
@@ -385,6 +404,8 @@ function MOI.optimize!(model::Optimizer)
         silent = model.ext[:silent],
         jacobian_structure_constant = true,
         jacobian_data_contiguous = true,
+        variable_names = names,
+        constraint_names = c_names,
         [k => v for (k, v) in model.ext[:kwargs]]...,
     )
     if x === nothing
