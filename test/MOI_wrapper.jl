@@ -464,7 +464,6 @@ function test_empty_model()
     return
 end
 
-
 function test_solve_with_names()
     model = PATHSolver.Optimizer()
     MOI.set(model, MOI.RawOptimizerAttribute("output_linear_model"), "yes")
