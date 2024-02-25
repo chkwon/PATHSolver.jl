@@ -37,11 +37,13 @@ mutable struct OutputInterface
     flush::Ptr{Cvoid}
 end
 
-function _c_flush(data::Ptr{Cvoid}, mode::Cint)
-    output_data = unsafe_pointer_to_objref(data)::OutputData
-    flush(output_data.io)
-    return
-end
+# flush argument is optional and appears unused. I could not trigger
+# a test that used it.
+# function _c_flush(data::Ptr{Cvoid}, mode::Cint)
+#     output_data = unsafe_pointer_to_objref(data)::OutputData
+#     flush(output_data.io)
+#     return
+# end
 
 function _c_print(data::Ptr{Cvoid}, mode::Cint, msg::Ptr{Cchar})
     if (
@@ -59,7 +61,7 @@ end
 
 function OutputInterface(output_data)
     _C_PRINT = @cfunction(_c_print, Cvoid, (Ptr{Cvoid}, Cint, Ptr{Cchar}))
-    _C_FLUSH = @cfunction(_c_flush, Cvoid, (Ptr{Cvoid}, Cint))
+    _C_FLUSH = C_NULL  # flush argument is optional
     return OutputInterface(pointer_from_objref(output_data), _C_PRINT, _C_FLUSH)
 end
 
