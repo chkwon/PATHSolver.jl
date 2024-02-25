@@ -464,6 +464,61 @@ function test_empty_model()
     return
 end
 
+
+function test_solve_with_names()
+    model = PATHSolver.Optimizer()
+    MOI.set(model, MOI.RawOptimizerAttribute("output_linear_model"), "yes")
+    MOI.Utilities.loadfromstring!(
+        model,
+        """
+        variables: v, w, x, y, z
+        c2: [0.0, -1.0 * y * y + -1.0 * z + 2, v, w] in Complements(4)
+        c3: VectorNonlinearFunction([ScalarNonlinearFunction(y^3 - 2z^2 + 2), ScalarNonlinearFunction(w^5 - x + 2y - 2z - 2), x, y]) in Complements(4)
+        c4: VectorNonlinearFunction([ScalarNonlinearFunction(w + 2x^3 - 2y + 4z - 6), z]) in Complements(2)
+        v in EqualTo(1.0)
+        w in Interval(0.0, 10.0)
+        x in GreaterThan(0.0)
+        z in Interval(1.0, 2.0)
+        """,
+    )
+    x = MOI.get(model, MOI.ListOfVariableIndices())
+    MOI.set.(model, MOI.VariablePrimalStart(), x, 1.0)
+    MOI.optimize!(model)
+    @test ≈(
+        MOI.get.(model, MOI.VariablePrimal(), x),
+        [1.0, 1.2847523, 0.9729164, 0.9093761, 1.1730350];
+        atol = 1e-6,
+    )
+    return
+end
+
+function test_solve_with_names_nonlinear()
+    model = PATHSolver.Optimizer()
+    MOI.set(model, MOI.RawOptimizerAttribute("output_linear_model"), "yes")
+    MOI.Utilities.loadfromstring!(
+        model,
+        """
+        variables: v, w, x, y, z
+        cnl2: VectorNonlinearFunction([0.0, -1.0 * y * y + -1.0 * z + 2, v, w]) in Complements(4)
+        c3: VectorNonlinearFunction([ScalarNonlinearFunction(y^3 - 2z^2 + 2), ScalarNonlinearFunction(w^5 - x + 2y - 2z - 2), x, y]) in Complements(4)
+        c4: VectorNonlinearFunction([ScalarNonlinearFunction(w + 2x^3 - 2y + 4z - 6), z]) in Complements(2)
+        v in EqualTo(1.0)
+        w in Interval(0.0, 10.0)
+        x in GreaterThan(0.0)
+        z in Interval(1.0, 2.0)
+        """,
+    )
+    x = MOI.get(model, MOI.ListOfVariableIndices())
+    MOI.set.(model, MOI.VariablePrimalStart(), x, 1.0)
+    MOI.optimize!(model)
+    @test ≈(
+        MOI.get.(model, MOI.VariablePrimal(), x),
+        [1.0, 1.2847523, 0.9729164, 0.9093761, 1.1730350];
+        atol = 1e-6,
+    )
+    return
+end
+
 end
 
 TestMOIWrapper.runtests()
