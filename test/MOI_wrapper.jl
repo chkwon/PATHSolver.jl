@@ -39,6 +39,7 @@ end
 
 function test_RawOptimizerAttribute()
     model = PATHSolver.Optimizer()
+    @test MOI.supports(model, MOI.RawOptimizerAttribute("output"))
     @test MOI.get(model, MOI.RawOptimizerAttribute("output")) === nothing
     MOI.set(model, MOI.RawOptimizerAttribute("output"), "no")
     @test MOI.get(model, MOI.RawOptimizerAttribute("output")) == "no"
@@ -148,7 +149,7 @@ function test_missing_complement_variable()
     return
 end
 
-function test_output_dimension_too_large()
+function test_malformed_complement_variable()
     model = PATHSolver.Optimizer()
     x = MOI.add_variable(model)
     MOI.add_constraint(
@@ -194,6 +195,18 @@ function test_variable_in_multiple_constraints()
         ),
         MOI.optimize!(model)
     )
+    return
+end
+
+function test_variable_primal_start()
+    model = PATHSolver.Optimizer()
+    x = MOI.add_variable(model)
+    @test MOI.supports(model, MOI.VariablePrimalStart(), MOI.VariableIndex)
+    @test MOI.get(model, MOI.VariablePrimalStart(), x) === nothing
+    MOI.set(model, MOI.VariablePrimalStart(), x, 1.0)
+    @test MOI.get(model, MOI.VariablePrimalStart(), x) === 1.0
+    MOI.set(model, MOI.VariablePrimalStart(), x, nothing)
+    @test MOI.get(model, MOI.VariablePrimalStart(), x) === nothing
     return
 end
 
@@ -361,6 +374,26 @@ function test_supports()
     F = MOI.VariableIndex
     @test !MOI.supports(model, MOI.ObjectiveFunction{F}())
     @test MOI.supports_constraint(model, F, MOI.GreaterThan{Float64})
+    return
+end
+
+function test_VectorOfVariables_nonlinear_operator()
+    model = PATHSolver.Optimizer()
+    MOI.Utilities.loadfromstring!(
+        model,
+        """
+        variables: x, y, z
+        VectorNonlinearFunction([0, z]) in Complements(2)
+        [y, x] in Complements(2)
+        x in GreaterThan(0.0)
+        y in GreaterThan(0.0)
+        """,
+    )
+    x = MOI.get(model, MOI.ListOfVariableIndices())
+    MOI.set.(model, MOI.VariablePrimalStart(), x, 1.0)
+    MOI.optimize!(model)
+    y = MOI.get.(model, MOI.VariablePrimal(), x)
+    @test abs(y[1] * y[2]) <= 1e-8
     return
 end
 
