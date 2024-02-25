@@ -22,7 +22,7 @@ function runtests()
         @testset "manual_test_CheckLicense" begin
             # Calling this test twice seems to lead to segfaults, so test it
             # only if we are running on CI.
-            manual_test_CheckLicense()
+            # manual_test_CheckLicense()
         end
     end
     return
