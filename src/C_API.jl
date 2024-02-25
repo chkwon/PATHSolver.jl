@@ -846,7 +846,7 @@ end
 
 function _linear_jacobian(M::SparseArrays.SparseMatrixCSC{Cdouble,Cint})
     # Size is checked with error message in _linear_function.
-    @assert size(M, 1) != size(M, 2)
+    @assert size(M, 1) == size(M, 2)
     return (
         n::Cint,
         nnz::Cint,
