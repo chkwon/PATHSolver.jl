@@ -585,11 +585,7 @@ function test_linear_blank_row()
     )
     x = MOI.get(model, MOI.ListOfVariableIndices())
     MOI.optimize!(model)
-    @test ≈(
-        MOI.get.(model, MOI.VariablePrimal(), x),
-        [0.0, 0.5];
-        atol = 1e-6,
-    )
+    @test ≈(MOI.get.(model, MOI.VariablePrimal(), x), [0.0, 0.5]; atol = 1e-6)
     return
 end
 
