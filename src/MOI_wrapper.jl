@@ -166,7 +166,7 @@ function _F_linear_operator(model::Optimizer)
     M = SparseArrays.sparse(Int32[], Int32[], Float64[], n, n)
     q = zeros(n)
     has_term = fill(false, n)
-    names = String[]
+    names = fill("", n)
     for index in MOI.get(
         model,
         MOI.ListOfConstraintIndices{
@@ -234,11 +234,11 @@ function _F_linear_operator(model::Optimizer)
             M[row_i, s_term.variable.value] += s_term.coefficient
         end
         c_name = MOI.get(model, MOI.ConstraintName(), index)
-        if Si.dimension == 2
-            push!(names, c_name)
+        if length(rows) == 2
+            names[rows[1]] = c_name
         else
             for i in 1:div(Si.dimension, 2)
-                push!(names, "$(c_name)[$i]")
+                names[rows[i]] = "$(c_name)[$i]"
             end
         end
     end
@@ -264,7 +264,7 @@ end
 function _F_nonlinear_operator(model::Optimizer)
     x = MOI.get(model, MOI.ListOfVariableIndices())
     f_map = Vector{MOI.ScalarNonlinearFunction}(undef, length(x))
-    names = String[]
+    names = fill("", length(x))
     for (FType, SType) in MOI.get(model, MOI.ListOfConstraintTypesPresent())
         if SType != MOI.Complements
             continue
@@ -274,6 +274,7 @@ function _F_nonlinear_operator(model::Optimizer)
             s = MOI.get(model, MOI.ConstraintSet(), ci)
             N = div(MOI.dimension(s), 2)
             scalars = MOI.Utilities.scalarize(f)
+            c_name = MOI.get(model, MOI.ConstraintName(), ci)
             for i in 1:N
                 fi, xi = _to_f(scalars[i]), _to_x(scalars[i+N])
                 if isassigned(f_map, xi.value)
@@ -283,13 +284,10 @@ function _F_nonlinear_operator(model::Optimizer)
                     )
                 end
                 f_map[xi.value] = fi
-            end
-            c_name = MOI.get(model, MOI.ConstraintName(), ci)
-            if N == 1
-                push!(names, c_name)
-            else
-                for i in 1:N
-                    push!(names, "$(c_name)[$i]")
+                if N == 1
+                    names[xi.value] = c_name
+                else
+                    names[xi.value] = "$(c_name)[$i]"
                 end
             end
         end

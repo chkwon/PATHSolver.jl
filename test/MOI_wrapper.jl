@@ -551,6 +551,48 @@ function test_solve_with_names_nonlinear()
     return
 end
 
+function test_nonlinear_blank_row()
+    model = PATHSolver.Optimizer()
+    MOI.Utilities.loadfromstring!(
+        model,
+        """
+        variables: a, x
+        [1.0 * x * x + 2.0 * x + -1.0, x] in Complements(2)
+        a in GreaterThan(0.0)
+        x in GreaterThan(0.0)
+        """,
+    )
+    x = MOI.get(model, MOI.ListOfVariableIndices())
+    MOI.optimize!(model)
+    @test ≈(
+        MOI.get.(model, MOI.VariablePrimal(), x),
+        [0.0, -1 + sqrt(2)];
+        atol = 1e-6,
+    )
+    return
+end
+
+function test_linear_blank_row()
+    model = PATHSolver.Optimizer()
+    MOI.Utilities.loadfromstring!(
+        model,
+        """
+        variables: a, x
+        c: [2.0 * x + -1.0, x] in Complements(2)
+        a in GreaterThan(0.0)
+        x in GreaterThan(0.0)
+        """,
+    )
+    x = MOI.get(model, MOI.ListOfVariableIndices())
+    MOI.optimize!(model)
+    @test ≈(
+        MOI.get.(model, MOI.VariablePrimal(), x),
+        [0.0, 0.5];
+        atol = 1e-6,
+    )
+    return
+end
+
 end
 
 TestMOIWrapper.runtests()
