@@ -1,0 +1,32 @@
+[[PATHSolver]]
+git-tree-sha1 = "ad0dc8bbf95cc578b4fdcd8343cf30ae787b9e23"
+arch = "x86_64"
+os = "linux"
+
+    [[PATHSolver.download]]
+    sha256 = "4010567a30a8cc0167f9fcaa44f24fc7bdb62345f55de9271f5616b6b2f7b20f"
+    url = "https://github.com/chkwon/PATHSolver.jl/releases/download/v5.0.3-path-binaries/x86_64-linux-gnu.tar.bz2"
+[[PATHSolver]]
+git-tree-sha1 = "25708f6f152ddbb1c4800f19b9c65ea9b6d8c27d"
+arch = "x86_64"
+os = "macos"
+
+    [[PATHSolver.download]]
+    sha256 = "49c27eb65d0fa6b18c051ad28809fbc0b5a436ff0cd4a8591c43f042c9140f69"
+    url = "https://github.com/chkwon/PATHSolver.jl/releases/download/v5.0.3-path-binaries/x86_64-apple-darwin.tar.bz2"
+[[PATHSolver]]
+git-tree-sha1 = "95592e56c188b48b217594bfbc4ffb774b7c7a9f"
+arch = "aarch64"
+os = "macos"
+
+    [[PATHSolver.download]]
+    sha256 = "b08c1c2f350edf806f67876caf8befd4736738f8f85cb9f4cf019d09fbc47dd5"
+    url = "https://github.com/chkwon/PATHSolver.jl/releases/download/v5.0.3-path-binaries/aarch64-apple-darwin.tar.bz2"
+[[PATHSolver]]
+git-tree-sha1 = "817a91944b44805dfdd817629eed4157b67e43b5"
+arch = "x86_64"
+os = "windows"
+
+    [[PATHSolver.download]]
+    sha256 = "e7d309770cb426ca190470ce638cdaa5bd702b448b11400d8ef3e94d8eef81a2"
+    url = "https://github.com/chkwon/PATHSolver.jl/releases/download/v5.0.3-path-binaries/x86_64-w64-mingw32.tar.bz2"
