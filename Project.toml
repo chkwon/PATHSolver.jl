@@ -1,7 +1,7 @@
 name = "PATHSolver"
 uuid = "f5f7c340-0bb3-5c69-969a-41884d311d1b"
 authors = ["Changhyun Kwon <chkwon@gmail.com>", "Oscar Dowson <o.dowson@gmail.com>"]
-version = "1.7.4"
+version = "1.7.5"
 
 [deps]
 LazyArtifacts = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
