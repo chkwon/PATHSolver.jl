@@ -9,19 +9,18 @@ import LazyArtifacts
 import MathOptInterface as MOI
 import SparseArrays
 
-function _get_artifact_path(filename)
-    root = LazyArtifacts.artifact"PATHSolver"
-    if Sys.iswindows()
-        # There's a permission error with the artifact
+function _get_artifact_path(file)
+    if Sys.iswindows()  # There's a permission error with the artifact
         chmod(root, 0o755; recursive = true)
-        return joinpath(root, "x86_64-w64-mingw32", "$filename.dll")
-    elseif Sys.isapple()
-        return joinpath(root, "$(Sys.ARCH)-apple-darwin", "$filename.dylib")
-    elseif Sys.islinux()
-        return joinpath(root, "x86_64-linux-gnu", "$filename.so")
-    else
-        error("Unsupported platform.")
     end
+    root = LazyArtifacts.artifact"PATHSolver"
+    triplet = join(split(Base.BUILD_TRIPLET, "-")[1:3], "-")
+    ext = ifelse(Sys.iswindows(), "dll", ifelse(Sys.isapple(), "dylib", "so"))
+    filename = joinpath(root, triplet, "$file.$ext")
+    if !isfile(filename)
+        error("Unsupported platform: $triplet")
+    end
+    return filename
 end
 
 function __init__()
