@@ -9,14 +9,13 @@ function get_artifact(data)
     dir = "$(data.arch)-$(data.platform)"
     filename = "$(dir).tar.bz2"
     run(`tar -cjf $filename $dir`)
+    sha256 = bytes2hex(open(sha256, filename))
     url = "https://github.com/chkwon/PATHSolver.jl/releases/download/v5.0.3-path-binaries/$filename"
     ret = Dict(
         "git-tree-sha1" => Tar.tree_hash(`gzcat $filename`),
         "arch" => data.arch,
         "os" => data.os,
-        "download" => Any[
-            Dict("sha256" => bytes2hex(open(sha256, filename)), "url" => url),
-        ]
+        "download" => Any[Dict("sha256" => sha256, "url" => url)],
     )
     return ret
 end

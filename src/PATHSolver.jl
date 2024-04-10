@@ -12,6 +12,8 @@ import SparseArrays
 function _get_artifact_path(filename)
     root = LazyArtifacts.artifact"PATHSolver"
     if Sys.iswindows()
+        # There's a permission error with the artifact
+        chmod(root, 0o755; recursive = true)
         return joinpath(root, "x86_64-w64-mingw32", "$filename.dll")
     elseif Sys.isapple()
         return joinpath(root, "$(Sys.ARCH)-apple-darwin", "$filename.dylib")
