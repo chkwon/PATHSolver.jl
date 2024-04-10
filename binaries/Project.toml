@@ -1,0 +1,5 @@
+[deps]
+Inflate = "d25df0c9-e2be-5dd7-82c8-3ad0b3e990b9"
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+Tar = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
