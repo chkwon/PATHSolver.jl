@@ -754,22 +754,20 @@ function solve_mcp(
     jacobian_linear_elements::Vector{Int} = Int[],
     kwargs...,
 )
-    if c_api_Path_CheckLicense(length(z), nnz) == 0
-        return MCP_LicenseError, nothing, nothing
-    end
     @assert length(z) == length(lb) == length(ub)
+    n = length(z)
+    if c_api_Path_CheckLicense(n, nnz) == 0
+        return MCP_LicenseError, nothing, nothing
+    elseif nnz > typemax(Cint)
+        return MCP_Error, nothing, nothing
+    elseif n == 0
+        return MCP_Solved, nothing, nothing
+    end
     out_io = silent ? IOBuffer() : stdout
     output_data = OutputData(out_io)
-    GC.@preserve output_data begin
-        c_api_Output_SetInterface(OutputInterface(output_data))
-
-        n = length(z)
-        if n == 0
-            return MCP_Solved, nothing, nothing
-        end
-        if nnz > typemax(Cint)
-            return MCP_Error, nothing, nothing
-        end
+    output_interface = OutputInterface(output_data)
+    GC.@preserve output_data output_interface begin
+        c_api_Output_SetInterface(output_interface)
         o = c_api_Options_Create()
         c_api_Path_AddOptions(o)
         c_api_Options_Default(o)
