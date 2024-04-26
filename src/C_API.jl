@@ -765,9 +765,8 @@ function solve_mcp(
     end
     out_io = silent ? IOBuffer() : stdout
     output_data = OutputData(out_io)
-    output_interface = OutputInterface(output_data)
-    GC.@preserve output_data output_interface begin
-        c_api_Output_SetInterface(output_interface)
+    GC.@preserve output_data begin
+        c_api_Output_SetInterface(OutputInterface(output_data))
         o = c_api_Options_Create()
         c_api_Path_AddOptions(o)
         c_api_Options_Default(o)
