@@ -410,7 +410,7 @@ end
 function c_api_MCP_SetInterface(m::MCP, interface::MCP_Interface)
     @ccall PATH_SOLVER.MCP_SetInterface(
         m::Ptr{Cvoid},
-        interface::Ref{MCP_Interface}
+        interface::Ref{MCP_Interface},
     )::Cvoid
     return
 end
@@ -418,7 +418,7 @@ end
 function c_api_MCP_SetPresolveInterface(m::MCP, interface::Presolve_Interface)
     @ccall PATH_SOLVER.MCP_SetPresolveInterface(
         m::Ptr{Cvoid},
-        interface::Ref{Presolve_Interface}
+        interface::Ref{Presolve_Interface},
     )::Cvoid
     return
 end
