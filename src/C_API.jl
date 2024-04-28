@@ -62,6 +62,9 @@ end
 function OutputInterface(output_data)
     _C_PRINT = @cfunction(_c_print, Cvoid, (Ptr{Cvoid}, Cint, Ptr{Cchar}))
     _C_FLUSH = C_NULL  # flush argument is optional
+    # To make pointer_from_objref legal, you must ensure that output_data AND
+    # the Output_Interface object outlive any ccalls. We do this in solve_mcp
+    # using `gc_root`.
     return OutputInterface(pointer_from_objref(output_data), _C_PRINT, _C_FLUSH)
 end
 
@@ -148,6 +151,9 @@ mutable struct Presolve_Interface
     jac_typ::Ptr{Cvoid}
     con_typ::Ptr{Cvoid}
 
+    # To make pointer_from_objref legal, you must ensure that presolve_data AND
+    # the Presolve_Interface object outlive any ccalls. We do this in solve_mcp
+    # using `gc_root`.
     function Presolve_Interface(presolve_data::PresolveData)
         return new(
             pointer_from_objref(presolve_data),
@@ -361,7 +367,9 @@ mutable struct MCP_Interface
                 (Ptr{Cvoid}, Cint, Ptr{Cuchar}, Cint)
             )
         end
-
+        # To make pointer_from_objref legal, you must ensure that interface_data
+        # AND the MCP_Interface object outlive any ccalls. We do this in
+        # solve_mcp using `gc_root`.
         return new(
             pointer_from_objref(interface_data),
             _C_PROBLEM_SIZE,
@@ -381,10 +389,9 @@ end
 mutable struct MCP
     n::Int
     ptr::Ptr{Cvoid}
-    id_data::Union{Nothing,InterfaceData}
-    presolve_data::Union{Nothing,PresolveData}
+
     function MCP(n::Int, ptr::Ptr{Cvoid})
-        m = new(n, ptr, nothing, nothing)
+        m = new(n, ptr)
         finalizer(c_api_MCP_Destroy, m)
         return m
     end
@@ -754,23 +761,30 @@ function solve_mcp(
     jacobian_linear_elements::Vector{Int} = Int[],
     kwargs...,
 )
-    if c_api_Path_CheckLicense(length(z), nnz) == 0
-        return MCP_LicenseError, nothing, nothing
-    end
     @assert length(z) == length(lb) == length(ub)
-    out_io = silent ? IOBuffer() : stdout
-    output_data = OutputData(out_io)
-    GC.@preserve output_data begin
-        c_api_Output_SetInterface(OutputInterface(output_data))
-
-        n = length(z)
-        if n == 0
-            return MCP_Solved, nothing, nothing
-        end
-        if nnz > typemax(Cint)
-            return MCP_Error, nothing, nothing
-        end
+    n = length(z)
+    if c_api_Path_CheckLicense(n, nnz) == 0
+        return MCP_LicenseError, nothing, nothing
+    elseif nnz > typemax(Cint)
+        return MCP_Error, nothing, nothing
+    elseif n == 0
+        return MCP_Solved, nothing, nothing
+    end
+    # gc_root is used to store various objects to prevent them from being GC'd.
+    gc_root = IdDict()
+    GC.@preserve gc_root begin
+        out_io = silent ? IOBuffer() : stdout
+        output_data = OutputData(out_io)
+        # We shouldn't GC output_data until we exit the GC.@preserve block.
+        gc_root[output_data] = true
+        output_interface = OutputInterface(output_data)
+        # We shouldn't GC output_interface until we exit the GC.@preserve block.
+        gc_root[output_interface] = true
+        c_api_Output_SetInterface(output_interface)
         o = c_api_Options_Create()
+        # Options has a finalizer. We don't want that to run until we exit the
+        # GC.@preserve block.
+        gc_root[o] = true
         c_api_Path_AddOptions(o)
         c_api_Options_Default(o)
         m = c_api_MCP_Create(n, nnz)
@@ -780,7 +794,7 @@ function solve_mcp(
         if jacobian_data_contiguous
             c_api_MCP_Jacobian_Data_Contiguous(m, true)
         end
-        m.id_data = InterfaceData(
+        id_data = InterfaceData(
             Cint(n),
             Cint(nnz),
             F,
@@ -791,16 +805,25 @@ function solve_mcp(
             variable_names,
             constraint_names,
         )
-        m_interface = MCP_Interface(m.id_data)
+        # We shouldn't GC id_data until we exit the GC.@preserve block.
+        gc_root[id_data] = true
+        m_interface = MCP_Interface(id_data)
+        # We shouldn't GC m_interface until we exit the GC.@preserve block.
+        gc_root[m_interface] = true
         c_api_MCP_SetInterface(m, m_interface)
         if jacobian_structure_constant && !isempty(jacobian_linear_elements)
-            m.presolve_data = PresolveData() do nnz, types
+            presolve_data = PresolveData() do nnz, types
                 for i in jacobian_linear_elements
                     types[i] = PRESOLVE_LINEAR
                 end
                 return
             end
-            presolve_interface = Presolve_Interface(m.presolve_data)
+            # We shouldn't GC presolve_data until we exit the GC.@preserve block.
+            gc_root[presolve_data] = true
+            presolve_interface = Presolve_Interface(presolve_data)
+            # We shouldn't GC presolve_interface until we exit the GC.@preserve
+            # block.
+            gc_root[presolve_interface] = true
             c_api_MCP_SetPresolveInterface(m, presolve_interface)
         end
         if length(kwargs) > 0
@@ -823,8 +846,8 @@ function solve_mcp(
             use_basics = use_basics,
         )
         status = c_api_Path_Solve(m, info)
+        X = c_api_MCP_GetX(m)
     end  # GC.@preserve
-    X = c_api_MCP_GetX(m)
     # TODO(odow): I don't know why, but manually calling MCP_Destroy was
     # necessary to avoid a segfault on Julia 1.0 when using LUSOL. I guess it's
     # something to do with the timing of when things need to get freed on the
