@@ -18,13 +18,6 @@ function runtests()
             end
         end
     end
-    if get(ENV, "CI", "false") == "true"
-        @testset "manual_test_CheckLicense" begin
-            # Calling this test twice seems to lead to segfaults, so test it
-            # only if we are running on CI.
-            # manual_test_CheckLicense()
-        end
-    end
     return
 end
 
@@ -40,9 +33,16 @@ function test_License_SetString()
     return
 end
 
-function manual_test_CheckLicense()
-    @test PATHSolver.c_api_Path_CheckLicense(1, 1) == 1
-    @test PATHSolver.c_api_Path_CheckLicense(1_000, 1_000) == 0
+function test_CheckLicense()
+    out_io = IOBuffer()
+    output_data = PATHSolver.OutputData(out_io)
+    output_interface = PATHSolver.OutputInterface(output_data)
+    GC.@preserve output_data output_interface begin
+        # The output_interface needs to be set before calling CheckLicense
+        PATHSolver.c_api_Output_SetInterface(output_interface)
+        @test PATHSolver.c_api_Path_CheckLicense(1, 1) == 1
+        @test PATHSolver.c_api_Path_CheckLicense(1_000, 1_000) == 0
+    end
     n = 1_000
     M = zeros(n, n)
     for i in 1:n
