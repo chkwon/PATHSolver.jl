@@ -724,7 +724,11 @@ function solve_mcp(
 )
     @assert length(z) == length(lb) == length(ub)
     n = length(z)
-
+    if nnz > typemax(Cint)
+        return MCP_Error, nothing, nothing
+    elseif n == 0
+        return MCP_Solved, nothing, nothing
+    end
     # gc_root is used to store various objects to prevent them from being GC'd.
     gc_root = IdDict()
     GC.@preserve gc_root begin
@@ -736,15 +740,11 @@ function solve_mcp(
         # We shouldn't GC output_interface until we exit the GC.@preserve block.
         gc_root[output_interface] = true
         c_api_Output_SetInterface(output_interface)
-
+        # We need to call `c_api_Path_CheckLicense` _after_ setting the output
+        # interface because CheckLicense may try to print to the screen.
         if c_api_Path_CheckLicense(n, nnz) == 0
             return MCP_LicenseError, nothing, nothing
-        elseif nnz > typemax(Cint)
-            return MCP_Error, nothing, nothing
-        elseif n == 0
-            return MCP_Solved, nothing, nothing
         end
-
         o = c_api_Options_Create()
         # Options has a finalizer. We don't want that to run until we exit the
         # GC.@preserve block.
