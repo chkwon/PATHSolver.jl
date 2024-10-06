@@ -163,7 +163,7 @@ end
 
 function _F_linear_operator(model::Optimizer)
     n = MOI.get(model, MOI.NumberOfVariables())
-    M = SparseArrays.sparse(Int32[], Int32[], Float64[], n, n)
+    I, J, V = Int32[], Int32[], Float64[]
     q = zeros(n)
     has_term = fill(false, n)
     names = fill("", n)
@@ -231,7 +231,9 @@ function _F_linear_operator(model::Optimizer)
                     "$(div(Si.dimension, 2) + term.output_index).",
                 )
             end
-            M[row_i, s_term.variable.value] += s_term.coefficient
+            push!(I, row_i)
+            push!(J, s_term.variable.value)
+            push!(V, s_term.coefficient)
         end
         c_name = MOI.get(model, MOI.ConstraintName(), index)
         if length(rows) == 2
@@ -242,6 +244,7 @@ function _F_linear_operator(model::Optimizer)
             end
         end
     end
+    M = SparseArrays.sparse(I, J, V, n, n)
     return M, q, SparseArrays.nnz(M), names
 end
 
