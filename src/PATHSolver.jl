@@ -18,7 +18,7 @@ function _get_artifact_path(file)
         error("Unsupported platform: $triplet")
     elseif Sys.iswindows()
         # There's a permission error with the artifact
-        chmod(filenane, 0o755)
+        chmod(filename, 0o755)
     end
     return filename
 end
