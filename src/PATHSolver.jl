@@ -11,14 +11,14 @@ import SparseArrays
 
 function _get_artifact_path(file)
     root = LazyArtifacts.artifact"PATHSolver"
-    if Sys.iswindows()  # There's a permission error with the artifact
-        chmod(root, 0o755; recursive = true)
-    end
     triplet = join(split(Base.BUILD_TRIPLET, "-")[1:3], "-")
     ext = ifelse(Sys.iswindows(), "dll", ifelse(Sys.isapple(), "dylib", "so"))
     filename = joinpath(root, triplet, "$file.$ext")
     if !isfile(filename)
         error("Unsupported platform: $triplet")
+    elseif Sys.iswindows()
+        # There's a permission error with the artifact
+        chmod(filename, 0o755)
     end
     return filename
 end
